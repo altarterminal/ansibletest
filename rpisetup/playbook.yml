@@ -1,0 +1,6 @@
+---
+- hosts: rpiservers
+  become: yes
+  become_user: root
+  roles:
+    - apt
