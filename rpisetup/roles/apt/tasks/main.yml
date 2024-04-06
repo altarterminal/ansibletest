@@ -10,3 +10,4 @@
     name:
       - vim
       - git
+      - jq
