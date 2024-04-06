@@ -1,7 +1,7 @@
 ---
 - name: install yq
   ansible.builtin.get_url:
-    url: "https://github.com/mikefarah/yq/releases/download/v{{ yq_version }}/yq_linux_{{ yq_arch }}"
+    url: "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64"
     dest: /usr/bin/yq
     owner: root
     group: root
