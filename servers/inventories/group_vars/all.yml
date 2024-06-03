@@ -1,0 +1,8 @@
+---
+
+ansible_ssh_user: ansible
+test_var_group_all: "inventories/group_vars/all.yml"
+test_var_group_parent: "inventories/group_vars/all.yml"
+test_var_group: "inventories/group_vars/all.yml"
+test_var_host: "inventories/group_vars/all.yml"
+test_var_role: "inventories/group_vars/all.yml"

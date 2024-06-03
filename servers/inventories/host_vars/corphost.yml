@@ -1,0 +1,6 @@
+---
+test_var_host: "inventories/host_vars/corphost.yml"
+test_var_role: "inventories/host_vars/corphost.yml"
+ansible_host: "127.0.0.1"
+ansible_port: "50000"
+ansible_user: "ansible"
