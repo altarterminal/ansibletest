@@ -73,7 +73,7 @@ while read -r soft; do
 
   # make check playbook
   { 
-    echo "- name: check ${name}"
+    echo "- name: ${name}"
     echo "  hosts: hosts_${name}"
     echo "  gather_facts: no"
     echo "  tasks:"
@@ -81,20 +81,20 @@ while read -r soft; do
     echo "      shell: type ${cmd}"
     echo "    - name: check ${name}'s version"
     echo "      shell: ${cmd} ${opt} | grep -F ${ver}"
-  } > "${OUTPUT_DIR}/playbook_check_${name}.yml"
+  } > "${OUTPUT_DIR}/playbook_${name}.yml"
 
   # make completion playbook
   {
-    echo "- name: check ${name} complement"
+    echo "- name: ${name}_complement"
     echo "  hosts: hosts_${name}_complement"
     echo "  gather_facts: no"
     echo "  tasks:"
     echo "    - name: check ${name} NOT exists"
     echo "      shell: ! type ${cmd}"
-  } > "${OUTPUT_DIR}/playbook_check_${name}_complement.yml"
+  } > "${OUTPUT_DIR}/playbook_${name}_complement.yml"
 
-  echo "playbook_check_${name}.yml"
-  echo "playbook_check_${name}_complement.yml"
+  echo "playbook_${name}.yml"
+  echo "playbook_${name}_complement.yml"
 done                                                                |
 
 # output the top playbook
