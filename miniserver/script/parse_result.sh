@@ -70,6 +70,6 @@ tr '=' ' '                                                          |
 awk '{ print $1, $2, $8, $(10); }'                                  |
 
 awk '
-$3 != 0 { print $1, $2, "fail";    }
-$4 != 0 { print $1, $2, "unreach"; }
+$3 != 0 { print $1, $2, "unreach"; }
+$4 != 0 { print $1, $2, "fail";    }
 '
