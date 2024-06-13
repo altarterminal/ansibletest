@@ -74,7 +74,7 @@ while read -r soft; do
 
   # output complement group
   echo "[hosts_${soft_name}_complement]"
-  jq -r '.hostlist.[].name' "${LEDGER_FILE}"                        |
+  jq -r '.hostlist[].name' "${LEDGER_FILE}"                         |
   eval $(echo "${soft}"                                             |
          jq -rc '.hosts[]'                                          |
          xargs -I@ echo 'grep -v ^@$ | '                            |
