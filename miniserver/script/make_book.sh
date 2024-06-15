@@ -80,7 +80,7 @@ while read -r soft; do
     echo "    - name: check ${name} exists"
     echo "      shell: type ${cmd}"
     echo "    - name: check ${name}'s version"
-    echo "      shell: ${cmd} ${opt} | grep -F ${ver}"
+    echo "      shell: ${cmd} ${opt} | grep -F \"${ver}\""
   } > "${OUTPUT_DIR}/playbook_${name}.yml"
 
   # make completion playbook
