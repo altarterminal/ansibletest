@@ -1,0 +1,18 @@
+services:
+
+  testhost1:
+    build: ./dockerfile
+    image: img-ansible-test
+    container_name: container-ansible-test1
+    restart: always
+    ports:
+      - 50000:22
+
+  testhost2:
+    build: ./dockerfile
+    image: img-ansible-test
+    container_name: container-ansible-test2
+    restart: always
+    ports:
+      - 50001:22
+
