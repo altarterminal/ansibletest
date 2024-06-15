@@ -56,9 +56,13 @@ jq -c '.hostlist[]' "${LEDGER_FILE}"                                |
 while read -r host; do
   host_name=$(echo "${host}" | jq -r '.name')
   host_ip=$(echo "${host}"   | jq -r '.ip')
-  host_port=$(echo "${host}" | jq -r '.port')
+  host_port=$(echo "${host}" | jq -r '.port // empty')
+  host_user=$(echo "${host}" | jq -r '.user // empty')
 
-  echo "${host_name} ansible_ip=${host_ip} ansible_port=${host_port}"
+  printf '%s' "${host_name} ansible_host=${host_ip}"
+  [ -n "${host_port}" ] && printf ' ansible_port=%s' "${host_port}"
+  [ -n "${host_user}" ] && printf ' ansible_user=%s' "${host_user}"
+  echo ""
 done
 echo ""
 
