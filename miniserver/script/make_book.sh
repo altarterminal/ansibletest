@@ -64,7 +64,6 @@ readonly SITE_FILE='site.yml'
 [ -f "${OUTPUT_DIR}/${SITE_FILE}" ] && rm "${OUTPUT_DIR}/${SITE_FILE}"
 
 jq -c '.softlist[]' "${LEDGER_FILE}"                                |
-
 while read -r soft; do
   name=$(echo "${soft}" | jq -r '.name')
   cmd=$(echo "${soft}" | jq -r '.cmd')
@@ -92,13 +91,4 @@ while read -r soft; do
     echo "    - name: check ${name} NOT exists"
     echo "      shell: ! type ${cmd}"
   } > "${OUTPUT_DIR}/playbook_${name}_complement.yml"
-
-  echo "playbook_${name}.yml"
-  echo "playbook_${name}_complement.yml"
-done                                                                |
-
-# output the top playbook
-{
-  echo '---'
-  sed 's!^! - import_playbook: !'
-} > "${OUTPUT_DIR}/${SITE_FILE}"
+done
