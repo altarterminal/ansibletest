@@ -32,4 +32,4 @@ fi
 # main routine
 #####################################################################
 
-ansible-playbook -i 'inventory.ini' "${PLAYBOOK}/prepare_situation.sh"
+ansible-playbook -i 'inventory.ini' "${PLAYBOOK}/prepare_situation.yml"
