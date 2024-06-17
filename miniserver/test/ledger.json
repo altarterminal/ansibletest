@@ -1,11 +1,11 @@
 {
   "hostlist":[
-    {"name": "ansiblelocalhost0", "ip": "127.0.0.1", "port": "50000", "user": "ansible"},
-    {"name": "ansiblelocalhost1", "ip": "127.0.0.1", "port": "50001", "user": "ansible"},
-    {"name": "ansiblelocalhost2", "ip": "127.0.0.1", "port": "50002", "user": "ansible"}
+    {"name": "ansiblelocalhost0", "ip": "127.0.0.1", "port": "50000"},
+    {"name": "ansiblelocalhost1", "ip": "127.0.0.1", "port": "50001"},
+    {"name": "ansiblelocalhost2", "ip": "127.0.0.1", "port": "50002"}
   ],
   "softlist":[
-    {"name": "GAWK", "ver": "GNU Awk 5.1.0", "cmd": "gawk", "opt": "--version", "hosts":["ansiblelocalhost0", "ansiblelocalhost1"]},
-    {"name": "jq", "ver": "jq-1.6", "cmd": "jq", "opt": "--version", "hosts":["ansiblelocalhost0"]}
+    {"name": "VIM", "ver": "Vi IMproved 8.2", "cmd": "vim", "opt": "--version", "hosts":["ansiblelocalhost0", "ansiblelocalhost1", "ansiblelocalhost2"]},
+    {"name": "Jenkins", "ver": "2.440.3", "cmd": "jenkins", "opt": "--version", "hosts":["ansiblelocalhost0", "ansiblelocalhost1"]}
   ]
 }
