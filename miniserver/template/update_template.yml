@@ -1,0 +1,10 @@
+- name: soft_update
+  hosts: all
+  gather_facts: yes
+  become: yes
+  tasks:
+    - name: apt_update
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: yes
+      when: ansible_distribution == 'Debian'

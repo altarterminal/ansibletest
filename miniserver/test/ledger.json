@@ -1,12 +1,11 @@
 {
   "hostlist":[
-    {"name": "localhost", "ip": "127.0.0.1", "port": "50000"},
-    {"name": "remotehost", "ip": "192.168.1.1", "port": "22"},
-    {"name": "remotehost2", "ip": "192.168.1.2", "port": "22"},
-    {"name": "remotehost3", "ip": "192.168.1.3", "port": "22"}
+    {"name": "ansiblelocalhost0", "ip": "127.0.0.1", "port": "50000", "user": "ansible"},
+    {"name": "ansiblelocalhost1", "ip": "127.0.0.1", "port": "50001", "user": "ansible"},
+    {"name": "ansiblelocalhost2", "ip": "127.0.0.1", "port": "50002", "user": "ansible"}
   ],
   "softlist":[
-    {"name": "OpenSSL", "ver": "2.0", "cmd": "openssl", "opt": "version", "hosts":["localhost", "remotehost"]},
-    {"name": "Vim", "ver": "9.0", "cmd": "vim", "opt": "--version", "hosts":["localhost"]}
+    {"name": "GAWK", "ver": "GNU Awk 5.1.0", "cmd": "gawk", "opt": "--version", "hosts":["ansiblelocalhost0", "ansiblelocalhost1"]},
+    {"name": "jq", "ver": "jq-1.6", "cmd": "jq", "opt": "--version", "hosts":["ansiblelocalhost0"]}
   ]
 }
