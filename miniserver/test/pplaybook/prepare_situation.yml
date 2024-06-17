@@ -1,0 +1,35 @@
+- name: prepare test situation
+  hosts: ansiblelocalhost0,ansiblelocalhost1
+  become: yes
+  tasks:
+    - name: install dependency
+      apt:
+        name: 
+          - openjdk-11-jre 
+          - curl
+
+    - name: register external repository
+      shell: |
+        curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+        echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]  https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+    - name: install specific version software
+      apt:
+        update_cache: yes
+        name: jenkins=2.440.3
+
+- name: hold the software version
+  hosts: ansiblelocalhost0
+  become: yes
+  tasks:
+    - name: hold the software version
+      shell: apt-mark hold jenkins
+
+- name: update to the last version
+  hosts: ansiblelocalhost1
+  become: yes
+  tasks:
+    - name: update to the last version
+      apt:
+        update_cache: yes
+        upgrade: yes
