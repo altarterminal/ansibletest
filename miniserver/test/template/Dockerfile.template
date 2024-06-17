@@ -7,8 +7,7 @@ RUN apt update && apt upgrade -y
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
 
-RUN apt install -y vim gawk wget git curl ansible
-RUN apt install -y sudo locales bash-completion openssh-server
+RUN apt install -y sudo locales bash-completion openssh-server vim
 
 # ユーザに関する設定
 RUN useradd -u ${uid} -m -d /home/${user} -G sudo ${user}
