@@ -45,16 +45,18 @@ if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
 fi
 
 readonly LEDGER_FILE=${opr}
-readonly SCRIPT_DIR='script'
-readonly TEMPLATE_DIR='template'
-readonly PLAYBOOK_DIR='playbook'
+
+readonly THIS_DIR=$(dirname $0)
+readonly SCRIPT_DIR="${THIS_DIR}/script"
+readonly TEMPLATE_DIR="${THIS_DIR}/template"
+readonly PLAYBOOK_DIR="${THIS_DIR}/playbook"
 
 #####################################################################
 # make files
 #####################################################################
 
 ${SCRIPT_DIR}/make_book.sh -d${PLAYBOOK_DIR} ${LEDGER_FILE}
-${SCRIPT_DIR}/make_inventory.sh ${LEDGER_FILE} > 'inventory.ini'
+${SCRIPT_DIR}/make_inventory.sh ${LEDGER_FILE} > "${THIS_DIR}/inventory.ini"
 
 cp "${TEMPLATE_DIR}/update_template.yml" "${PLAYBOOK_DIR}/playbook__update.yml"
 
