@@ -1,4 +1,4 @@
-- name: prepare test situation
+- name: install the old software version
   hosts: ansiblelocalhost0,ansiblelocalhost1
   become: yes
   tasks:
