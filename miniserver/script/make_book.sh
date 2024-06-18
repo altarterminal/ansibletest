@@ -89,6 +89,6 @@ while read -r soft; do
     echo "  gather_facts: no"
     echo "  tasks:"
     echo "    - name: check ${name} NOT exists"
-    echo "      shell: ! type ${cmd}"
+    echo "      shell: '! type ${cmd}'"
   } > "${OUTPUT_DIR}/playbook_${name}_complement.yml"
 done
