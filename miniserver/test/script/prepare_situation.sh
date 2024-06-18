@@ -5,13 +5,23 @@ set -eu
 # setting 
 #####################################################################
 
-TOP_DIR='..'
+THIS_DIR=$(dirname $0)
+TOP_DIR="${THIS_DIR}/../.."
+TEST_DIR="${THIS_DIR}/.."
 SCRIPT_DIR="${TOP_DIR}/script"
-LEDGER_FILE='./ledger.json'
-PLAYBOOK_DIR='./pplaybook'
+PLAYBOOK_DIR="${TEST_DIR}/pplaybook"
 
-${SCRIPT_DIR}/make_inventory.sh ${LEDGER_FILE} > 'inventory.ini'
-cp "${TOP_DIR}/ansible.cfg" '.'
+LEDGER_FILE="${TEST_DIR}/ledger.json"
+INVENTORY_FILE="${TEST_DIR}/inventory.ini"
+PLAYBOOK_FILE="${PLAYBOOK_DIR}/prepare_situation.yml"
+
+${SCRIPT_DIR}/make_inventory.sh ${LEDGER_FILE} > "${INVENTORY_FILE}"
+cp "${TOP_DIR}/ansible.cfg" "${TEST_DIR}"
+
+if ! docker ps | grep -q 'container-ansible-test0'; then
+  echo "${0##*/}: some container not running" 1>&2
+  exit 1
+fi
 
 if ! docker ps | grep -q 'container-ansible-test1'; then
   echo "${0##*/}: some container not running" 1>&2
@@ -32,4 +42,4 @@ fi
 # main routine
 #####################################################################
 
-ansible-playbook -i 'inventory.ini' "${PLAYBOOK_DIR}/prepare_situation.yml"
+ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}"
