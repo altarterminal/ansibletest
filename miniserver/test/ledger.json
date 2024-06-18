@@ -6,6 +6,6 @@
   ],
   "softlist":[
     {"name": "VIM", "ver": "Vi IMproved 8.2", "cmd": "vim", "opt": "--version", "hosts":["ansiblelocalhost0", "ansiblelocalhost1", "ansiblelocalhost2"]},
-    {"name": "Jenkins", "ver": "2.440.3", "cmd": "jenkins", "opt": "--version", "hosts":["ansiblelocalhost0", "ansiblelocalhost1"]}
+    {"name": "Docker", "ver": "Docker version 20.10.24", "cmd": "docker", "opt": "--version", "hosts":["ansiblelocalhost0", "ansiblelocalhost1"]}
   ]
 }

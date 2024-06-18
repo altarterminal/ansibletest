@@ -5,31 +5,53 @@
     - name: install dependency
       apt:
         name: 
-          - openjdk-11-jre 
           - curl
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
 
     - name: register external repository
       shell: |
-        curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-        echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]  https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+        mkdir -m 0755 -p /etc/apt/keyrings
+        [ -e /etc/apt/keyrings/docker.gpg ] && rm /etc/apt/keyrings/docker.gpg
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    - name: remove exisiting software
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+        autoremove: yes
+        state: absent
 
     - name: install specific version software
       apt:
         update_cache: yes
-        name: jenkins=2.440.3
+        name:
+          - docker-ce=5:20.10.24~3-0~ubuntu-jammy
+          - docker-ce-cli=5:20.10.24~3-0~ubuntu-jammy
 
 - name: hold the software version
   hosts: ansiblelocalhost0
   become: yes
   tasks:
     - name: hold the software version
-      shell: apt-mark hold jenkins
+      shell: apt-mark hold docker-ce docker-ce-cli
 
 - name: update to the last version
-  hosts: ansiblelocalhost1
+  hosts: ansiblelocalhost0,ansiblelocalhost1
   become: yes
   tasks:
     - name: update to the last version
       apt:
         update_cache: yes
         upgrade: yes
+
+- name: unhold the software version
+  hosts: ansiblelocalhost0
+  become: yes
+  tasks:
+    - name: unhold the software version
+      shell: apt-mark unhold docker-ce docker-ce-cli
