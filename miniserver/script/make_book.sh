@@ -60,9 +60,6 @@ readonly SITE_FILE='site.yml'
 # main routine
 #####################################################################
 
-# delete the old top playbook
-[ -f "${OUTPUT_DIR}/${SITE_FILE}" ] && rm "${OUTPUT_DIR}/${SITE_FILE}"
-
 jq -c '.softlist[]' "${LEDGER_FILE}"                                |
 while read -r soft; do
   name=$(echo "${soft}" | jq -r '.name')
