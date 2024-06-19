@@ -1,4 +1,4 @@
-- name: soft_update
+- name: Update
   hosts: all
   gather_facts: yes
   become: yes

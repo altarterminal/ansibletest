@@ -58,7 +58,7 @@ readonly PLAYBOOK_DIR="${THIS_DIR}/playbook"
 ${SCRIPT_DIR}/make_book.sh -d${PLAYBOOK_DIR} ${LEDGER_FILE}
 ${SCRIPT_DIR}/make_inventory.sh ${LEDGER_FILE} > "${THIS_DIR}/inventory.ini"
 
-cp "${TEMPLATE_DIR}/update_template.yml" "${PLAYBOOK_DIR}/playbook__update.yml"
+cp "${TEMPLATE_DIR}/playbook__update.yml" "${PLAYBOOK_DIR}/playbook__update.yml"
 
 #####################################################################
 # exec playbook
