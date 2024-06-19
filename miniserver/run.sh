@@ -69,5 +69,6 @@ sort                                                                |
 while read -r playbook
 do
   ansible-playbook -i inventory.ini ${playbook}                     |
-  ${SCRIPT_DIR}/parse_result.sh
+  ${SCRIPT_DIR}/parse_result.sh                                     |
+  ${SCRIPT_DIR}/sum_result.sh
 done
