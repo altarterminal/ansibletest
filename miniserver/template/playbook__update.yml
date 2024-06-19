@@ -1,6 +1,6 @@
 - name: Update
   hosts: all
-  gather_facts: yes
+  gather_facts: no
   become: yes
   tasks:
     - name: apt_update
