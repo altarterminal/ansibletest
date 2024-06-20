@@ -54,7 +54,6 @@ fi
 
 readonly LEDGER_FILE=${opr}
 readonly OUTPUT_DIR=${opt_d%/}
-readonly SITE_FILE='site.yml'
 
 #####################################################################
 # main routine
