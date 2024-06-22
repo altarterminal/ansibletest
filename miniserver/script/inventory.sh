@@ -7,10 +7,10 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} <ledger>
+Usage   : ${0##*/} -s<soft ledger> <host ledger>
 Options :
 
-make inventory files from <ledger>.
+make inventory files from <soft ledger> and <host ledger>
 USAGE
   exit 1
 }
@@ -20,12 +20,14 @@ USAGE
 #####################################################################
 
 opr=''
+opt_s=''
 
 i=1
 for arg in ${1+"$@"}
 do
   case "$arg" in
     -h|--help|--version) print_usage_and_exit ;;
+    -s*)                 opt_s=${arg#-s}      ;;
     *)
       if [ $i -eq $# ] && [ -z "$opr" ]; then
         opr=$arg
@@ -44,7 +46,13 @@ if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
   exit 1
 fi
 
-readonly LEDGER_FILE=${opr}
+if [ ! -f "${opt_s}" ] || [ ! -r "${opt_s}" ]; then
+  echo "${0##*/}: <${opt_s}> cannot be accessed" 1>&2
+  exit 1
+fi
+
+readonly HOST_LEDGER=${opr}
+readonly SOFT_LEDGER=${opt_s}
 
 #####################################################################
 # main routine
@@ -52,7 +60,7 @@ readonly LEDGER_FILE=${opr}
 
 # generate all vars
 echo "[all]"
-jq -c '.hostlist[]' "${LEDGER_FILE}"                                |
+jq -c '.[]' "${HOST_LEDGER}"                                        |
 while read -r host; do
   host_name=$(echo "${host}" | jq -r '.name')
   host_ip=$(echo "${host}"   | jq -r '.ip')
@@ -67,22 +75,24 @@ done
 echo ""
 
 # generate group
-jq -c '.softlist[]' "${LEDGER_FILE}"                                |
+jq -c '.[]' "${SOFT_LEDGER}"                                        |
 while read -r soft; do
-  soft_name=$(echo "${soft}" | jq -r '.name')
+  name=$(echo "${soft}" | jq -r '.name')
+  hosts=$(echo "${soft}" | jq -rc '.hosts[]')
+  chosts=$(jq -r '.[].name' "${HOST_LEDGER}"                        |
+           eval $(echo "${soft}"                                    |
+                  jq -rc '.hosts[]'                                 |
+                  xargs -I@ echo 'grep -v ^@$ | '                   |
+                  { cat; echo cat; }                               ))
 
   # output target group
-  echo "[hosts_${soft_name}]"
-  echo "${soft}" | jq -rc '.hosts[]'
+  echo "[hosts_${name}]"
+  echo "${hosts}"
   echo ""
 
   # output complement group
-  echo "[hosts_${soft_name}_complement]"
-  jq -r '.hostlist[].name' "${LEDGER_FILE}"                         |
-  eval $(echo "${soft}"                                             |
-         jq -rc '.hosts[]'                                          |
-         xargs -I@ echo 'grep -v ^@$ | '                            |
-         { cat; echo cat; }                                         )
+  echo "[hosts_${name}_complement]"
+  echo "${chosts}"
   echo ""
 done
 

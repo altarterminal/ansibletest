@@ -7,10 +7,10 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} <ledger>
+Usage   : ${0##*/} <soft ledger>
 Options : -d<output dir>
 
-make inventory files from <ledger>.
+make inventory files from <soft ledger>
 USAGE
   exit 1
 }
@@ -52,14 +52,14 @@ if [ ! -d "${opt_d}" ] || [ ! -w "${opt_d}" ]; then
   exit 1
 fi
 
-readonly LEDGER_FILE=${opr}
+readonly SOFT_LEDGER=${opr}
 readonly OUTPUT_DIR=${opt_d%/}
 
 #####################################################################
 # main routine
 #####################################################################
 
-jq -c '.softlist[]' "${LEDGER_FILE}"                                |
+jq -c '.softlist[]' "${SOFT_LEDGER}"                                |
 while read -r soft; do
   name=$(echo "${soft}" | jq -r '.name')
   cmd=$(echo "${soft}" | jq -r '.cmd')

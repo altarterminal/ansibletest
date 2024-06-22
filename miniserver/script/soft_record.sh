@@ -7,10 +7,10 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} -l<host ledger> <result>
+Usage   : ${0##*/} -l<ledger> <result>
 Options : -r
 
-update <record> with info of <host ledger> and <result>
+update <record> with info of <ledger> and <result>
 -r specify the direcotry in which record files are included
 USAGE
   exit 1
@@ -62,7 +62,7 @@ elif [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
 fi
 
 readonly LEDGER_FILE=${opt_l}
-readonly RECORD_FILE="${opt_r}/Update_record.json"
+readonly RECORD_DIR=${opt_r}
 readonly RESULT_FILE=${opr}
 readonly DATE=$(date '+%Y/%m/%d')
 
@@ -70,28 +70,31 @@ readonly DATE=$(date '+%Y/%m/%d')
 # main routine
 #####################################################################
 
-# if the record file not exists, make and initialize it
-if [ ! -e "${RECORD_FILE}" ]; then
-  echo "${0##*/}: <${RECORD_FILE}> not exist so make it" 1>&2
-  mkdir -p "$(dirname ${RECORD_FILE})"
-  printf '[]\n' > "${RECORD_FILE}"
-fi
+cat ${RESULT_FILE:+"${RESULT_FILE}"}                                |
+sort                                                                |
 
-# input the result
-read -r name result nghosts < ${RESULT_FILE:-'/dev/stdin'}  
+while read -r name result nghosts
+do
+  RECORD_FILE="${RECORD_DIR}/${name}_record.yml"
 
-# if invalid result is included, output warning
-if [ _"${name}" != _'Update' ]; then
-  printf '%s: the result (%s, %s, %s) is invalid for <Update>\n'    \
-    "${0##*/}" "${name}" "${result}" "${nghosts}"                   \
-    1>&2
-fi
+  # if the record file not exists, make and initialize it
+  if [ ! -e "${RECORD_FILE}" ]; then
+    echo "${0##*/}: <${RECORD_FILE}> not exist so make it" 1>&2
+    mkdir -p "$(dirname ${RECORD_FILE})"
+    printf '[]\n' > "${RECORD_FILE}"
+  fi
+ 
+  ver=$(cat "${LEDGER_FILE}"                                        |
+        jq -r '.[] | select(.name=="'"${name}"'") | .ver'           )
+  hosts=$(cat "${LEDGER_FILE}"                                      |
+        jq -cr '.[] | select(.name=="'"${name}"'") | .hosts'        )
 
-hosts=$(jq '.[].name' "${LEDGER_FILE}" | jq '.' -sc)
+  exp='. |= .+[{"date":"%s","result":"%s","ver":"%s","hosts":%s}]'
+  exp=$(printf "${exp}" "${DATE}" "${result}" "${ver}" "${hosts}")
 
-exp='. |= .+[{"date":"%s","result":"%s","hosts":%s}]'
-exp=$(printf "${exp}" "${DATE}" "${result}" "${hosts}")
+  cat "${RECORD_FILE}"                                              |
+  jq "${exp}"                                                       |
+  cat > "${RECORD_FILE}.tmp"
 
-jq "${exp}" "${RECORD_FILE}" > "${RECORD_FILE}.tmp"
-
-mv "${RECORD_FILE}.tmp" "${RECORD_FILE}"
+  mv "${RECORD_FILE}.tmp" "${RECORD_FILE}"
+done
