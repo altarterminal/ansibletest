@@ -7,10 +7,10 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} <soft ledger>
+Usage   : ${0##*/} <ledger>
 Options : -d<output dir>
 
-make inventory files from <soft ledger>
+make inventory files from <ledger>
 USAGE
   exit 1
 }
@@ -66,15 +66,13 @@ while read -r soft; do
   opt=$(echo "${soft}" | jq -r '.opt')
   ver=$(echo "${soft}" | jq -r '.ver')
 
-  # make check playbook
-  { 
-    echo "- name: ${name}"
-    echo "  hosts: hosts_${name}"
+  # make completion playbook
+  {
+    echo "- name: ${name}_complement"
+    echo "  hosts: hosts_${name}_complement"
     echo "  gather_facts: no"
     echo "  tasks:"
-    echo "    - name: check ${name} exists"
-    echo "      shell: type ${cmd}"
-    echo "    - name: check ${name}'s version"
-    echo "      shell: ${cmd} ${opt} | grep -F \"${ver}\""
-  } > "${OUTPUT_DIR}/playbook_${name}.yml"
+    echo "    - name: check ${name} NOT exists"
+    echo "      shell: '! type ${cmd}'"
+  } > "${OUTPUT_DIR}/playbook_${name}_complement.yml"
 done
