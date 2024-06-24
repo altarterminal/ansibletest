@@ -7,11 +7,11 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} -l<host ledger> <result>
+Usage   : ${0##*/} -l<host ledger> -r<record file> <result>
 Options : -r
 
 update <record> with info of <host ledger> and <result>
--r specify the direcotry in which record files are included
+-r specify the file to record result
 USAGE
   exit 1
 }
@@ -22,7 +22,7 @@ USAGE
 
 opr=''
 opt_l=''
-opt_r='.'
+opt_r=''
 
 i=1
 for arg in ${1+"$@"}
@@ -49,9 +49,11 @@ if [ ! -f "${opt_l}" ] || [ ! -r "${opt_l}" ]; then
   exit 1
 fi
 
-if [ ! -d "${opt_r}" ] || [ ! -w "${opt_r}" ]; then
-  echo "${0##*/}: <${opt_r}> cannot be accessed" 1>&2
-  exit 1
+if [ -e "${opt_r}" ]; then
+  if [ ! -f "${opt_r}" ] || [ ! -w "${opt_r}" ]; then
+    echo "${0##*/}: <${opt_r}> cannot be accessed" 1>&2
+    exit 1
+  fi
 fi
 
 if [ "_${opr}" = '_' ] || [ "_${opr}" = '_-' ]; then
@@ -62,7 +64,7 @@ elif [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
 fi
 
 readonly LEDGER_FILE=${opt_l}
-readonly RECORD_FILE="${opt_r}/Update_record.json"
+readonly RECORD_FILE="${opt_r}"
 readonly RESULT_FILE=${opr}
 readonly DATE=$(date '+%Y/%m/%d')
 
@@ -89,9 +91,12 @@ fi
 
 hosts=$(jq '.[].name' "${LEDGER_FILE}" | jq '.' -sc)
 
+# construct the update expression
 exp='. |= .+[{"date":"%s","result":"%s","hosts":%s}]'
 exp=$(printf "${exp}" "${DATE}" "${result}" "${hosts}")
 
+# make the record file after update
 jq "${exp}" "${RECORD_FILE}" > "${RECORD_FILE}.tmp"
 
+# replace the record file
 mv "${RECORD_FILE}.tmp" "${RECORD_FILE}"
