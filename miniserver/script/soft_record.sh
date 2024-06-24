@@ -89,12 +89,13 @@ do
   hosts=$(cat "${LEDGER_FILE}"                                      |
         jq -cr '.[] | select(.name=="'"${name}"'") | .hosts'        )
 
+  # construct the update expression
   exp='. |= .+[{"date":"%s","result":"%s","ver":"%s","hosts":%s}]'
   exp=$(printf "${exp}" "${DATE}" "${result}" "${ver}" "${hosts}")
 
-  cat "${RECORD_FILE}"                                              |
-  jq "${exp}"                                                       |
-  cat > "${RECORD_FILE}.tmp"
+  # make the record file after update
+  jq "${exp}" "${RECORD_FILE}" > "${RECORD_FILE}.tmp"
 
+  # replace the record file
   mv "${RECORD_FILE}.tmp" "${RECORD_FILE}"
 done
