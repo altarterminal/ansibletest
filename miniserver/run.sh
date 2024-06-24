@@ -7,25 +7,27 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} <ledger>
+Usage   : ${0##*/} -s<soft ledger> <host ledger>
 Options :
 
-run maintenance process from <ledger>.
+run maintenance process from <soft ledger> and <host ledger>.
 USAGE
   exit 1
 }
 
 #####################################################################
-# parameter
+# parse arg
 #####################################################################
 
 opr=''
+opt_s=''
 
 i=1
 for arg in ${1+"$@"}
 do
   case "$arg" in
     -h|--help|--version) print_usage_and_exit ;;
+    -s*)                 opt_s=${arg#-s}      ;;
     *)
       if [ $i -eq $# ] && [ -z "$opr" ]; then
         opr=$arg
@@ -44,31 +46,74 @@ if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
   exit 1
 fi
 
-readonly LEDGER_FILE=${opr}
+if [ ! -f "${opt_s}" ] || [ ! -r "${opt_s}" ]; then
+  echo "${0##*/}: <${opt_s}> cannot be accessed" 1>&2
+  exit 1
+fi
+
+#####################################################################
+# set paramters
+#####################################################################
+
+readonly HOST_LEDGER=${opr}
+readonly SOFT_LEDGER=${opt_s}
 
 readonly THIS_DIR=$(dirname $0)
+readonly ANSIBLE_DIR="${THIS_DIR}/ansible"
 readonly SCRIPT_DIR="${THIS_DIR}/script"
-readonly TEMPLATE_DIR="${THIS_DIR}/template"
-readonly PLAYBOOK_DIR="${THIS_DIR}/playbook"
+
+readonly INVENTORY="${ANSIBLE_DIR}/inventory.ini"
+readonly SOFTC_LEDGER="${ANSIBLE_DIR}/softc_ledger.json"
+readonly SOFT_PLAYBOOK_DIR="${ANSIBLE_DIR}/soft_playbook"
+readonly SOFTC_PLAYBOOK_DIR="${ANSIBLE_DIR}/softc_playbook"
+readonly UPDATE_PLAYBOOK="${ANSIBLE_DIR}/playbook_update.yml"
+
+readonly SOFT_RECORD_DIR="${THIS_DIR}/soft_record"
+readonly SOFTC_RECORD_DIR="${THIS_DIR}/softc_record"
+readonly UPDATE_RECORD_DIR="${THIS_DIR}/update_record"
+
+readonly UPDATE_RECORD_FILE="${UPDATE_RECORD_DIR}/Update_record.json"
 
 #####################################################################
 # make files
 #####################################################################
 
-${SCRIPT_DIR}/make_book.sh -d${PLAYBOOK_DIR} ${LEDGER_FILE}
-${SCRIPT_DIR}/make_inventory.sh ${LEDGER_FILE} > "${THIS_DIR}/inventory.ini"
+mkdir -p "${SOFT_PLAYBOOK_DIR}"
+mkdir -p "${SOFT_RECORD_DIR}"
+mkdir -p "${SOFTC_PLAYBOOK_DIR}"
+mkdir -p "${SOFTC_RECORD_DIR}"
+mkdir -p "${UPDATE_RECORD_DIR}"
 
-cp "${TEMPLATE_DIR}/playbook__update.yml" "${PLAYBOOK_DIR}/playbook__update.yml"
+${SCRIPT_DIR}/inventory.sh -s"${SOFT_LEDGER}" "${HOST_LEDGER}" >"${INVENTORY}"
+${SCRIPT_DIR}/softc_ledger.sh -s"${SOFT_LEDGER}" "${HOST_LEDGER}" >"${SOFTC_LEDGER}"
+
+${SCRIPT_DIR}/soft_playbook.sh  -d${SOFT_PLAYBOOK_DIR}  ${SOFT_LEDGER}
+${SCRIPT_DIR}/softc_playbook.sh -d${SOFTC_PLAYBOOK_DIR} ${SOFTC_LEDGER}
+${SCRIPT_DIR}/update_playbook.sh >"${UPDATE_PLAYBOOK}"
 
 #####################################################################
 # exec playbook
 #####################################################################
 
-find ${PLAYBOOK_DIR} -name "*.yml"                                  |
+# execute: check software version
+find "${SOFT_PLAYBOOK_DIR}" -name "playbook_*.yml"                  |
 sort                                                                |
 while read -r playbook
 do
-  ansible-playbook -i inventory.ini ${playbook}                     |
-  ${SCRIPT_DIR}/parse_result.sh                                     |
-  ${SCRIPT_DIR}/sum_result.sh
-done
+  ${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" "${playbook}"
+done                                                                |
+${SCRIPT_DIR}/soft_record.sh -l"${SOFT_LEDGER}" -r"${SOFT_RECORD_DIR}"
+
+# execute: check software NOT installed
+find "${SOFTC_PLAYBOOK_DIR}" -name "playbook_*.yml"                 |
+sort                                                                |
+while read -r playbook
+do
+  ${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" "${playbook}"
+done                                                                |
+${SCRIPT_DIR}/softc_record.sh -l"${SOFTC_LEDGER}" -r"${SOFTC_RECORD_DIR}"
+
+# execute: apt upgrade
+${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" "${UPDATE_PLAYBOOK}" |
+${SCRIPT_DIR}/update_record.sh -l"${HOST_LEDGER}" -r"${UPDATE_RECORD_FILE}"
+
