@@ -73,9 +73,10 @@ readonly DATE=$(date '+%Y/%m/%d')
 cat ${RESULT_FILE:+"${RESULT_FILE}"}                                |
 sort                                                                |
 
-while read -r name result nghosts
+while read -r cname result nghosts
 do
-  RECORD_FILE="${RECORD_DIR}/${name}_record.yml"
+  name=${cname%_complement}
+  RECORD_FILE="${RECORD_DIR}/${cname}_record.yml"
 
   # if the record file not exists, make and initialize it
   if [ ! -e "${RECORD_FILE}" ]; then
@@ -83,16 +84,17 @@ do
     mkdir -p "$(dirname ${RECORD_FILE})"
     printf '[]\n' > "${RECORD_FILE}"
   fi
- 
+
   hosts=$(cat "${LEDGER_FILE}"                                      |
-          jq -cr '.[] | select(.name=="'"${name%_complement}"'") | .hosts')
+          jq -cr '.[] | select(.name=="'"${name}"'") | .hosts'      )
 
+  # construct the update expression
   exp='. |= .+[{"date":"%s","result":"%s","hosts":%s}]'
-  exp=$(printf "${exp}" "${DATE}" "${result}" "${hosts}"            )
+  exp=$(printf "${exp}" "${DATE}" "${result}" "${hosts}")
 
-  cat "${RECORD_FILE}"                                              |
-  jq "${exp}"                                                       |
-  cat > "${RECORD_FILE}.tmp"
+  # make the record file after update
+  jq "${exp}" "${RECORD_FILE}" > "${RECORD_FILE}.tmp"
 
+  # replace the record file
   mv "${RECORD_FILE}.tmp" "${RECORD_FILE}"
 done
