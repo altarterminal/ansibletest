@@ -7,10 +7,11 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} <ledger>
+Usage   : ${0##*/} <softc ledger>
 Options : -d<output dir>
 
-make inventory files from <ledger>
+make ansible playbook files from <softc ledger>.
+-d: specify the <output dir> into which output files
 USAGE
   exit 1
 }

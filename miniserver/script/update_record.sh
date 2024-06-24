@@ -10,8 +10,8 @@ print_usage_and_exit () {
 Usage   : ${0##*/} -l<host ledger> -r<record file> <result>
 Options : -r
 
-update <record> with info of <host ledger> and <result>
--r specify the file to record result
+update <record file> with info of <host ledger> and <result>
+-r: specify the file to record result
 USAGE
   exit 1
 }

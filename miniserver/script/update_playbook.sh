@@ -10,7 +10,7 @@ print_usage_and_exit () {
 Usage   : ${0##*/}
 Options :
 
-make update playbook
+make an update playbook.
 USAGE
   exit 1
 }
@@ -20,14 +20,12 @@ USAGE
 #####################################################################
 
 opr=''
-opt_d='.'
 
 i=1
 for arg in ${1+"$@"}
 do
   case "$arg" in
     -h|--help|--version) print_usage_and_exit ;;
-    -d*)                 opt_d=${arg#-d}      ;;
     *)
       if [ $i -eq $# ] && [ -z "$opr" ]; then
         opr=$arg

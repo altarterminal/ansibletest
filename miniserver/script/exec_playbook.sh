@@ -10,7 +10,7 @@ print_usage_and_exit () {
 Usage   : ${0##*/} -i<ansible inventory> <ansible playbook>
 Options :
 
-execute <ansible playbook> with <ansible inventory> and parse the result
+execute <ansible playbook> with <ansible inventory> and parse the result.
 USAGE
   exit 1
 }

@@ -10,7 +10,7 @@ print_usage_and_exit () {
 Usage   : ${0##*/} -s<soft ledger> <host ledger>
 Options :
 
-make inventory files from <soft ledger> and <host ledger>
+make inventory files from <soft ledger> and <host ledger>.
 USAGE
   exit 1
 }
@@ -77,6 +77,7 @@ echo ""
 # generate group
 jq -c '.[]' "${SOFT_LEDGER}"                                        |
 while read -r soft; do
+  # extract info
   name=$(echo "${soft}" | jq -r '.name')
   hosts=$(echo "${soft}" | jq -rc '.hosts[]')
   chosts=$(jq -r '.[].name' "${HOST_LEDGER}"                        |

@@ -7,11 +7,11 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} -l<ledger> <result>
-Options : -r
+Usage   : ${0##*/} -l<soft ledger> <result>
+Options : -r<directory>
 
-update <record> with info of <ledger> and <result>
--r specify the direcotry in which record files are included
+update <record> with info of <soft ledger> and <result>.
+-r: specify the <direcotry> in which record files are included.
 USAGE
   exit 1
 }
@@ -62,7 +62,7 @@ elif [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
 fi
 
 readonly LEDGER_FILE=${opt_l}
-readonly RECORD_DIR=${opt_r}
+readonly RECORD_DIR=${opt_r%/}
 readonly RESULT_FILE=${opr}
 readonly DATE=$(date '+%Y/%m/%d')
 

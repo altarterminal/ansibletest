@@ -10,7 +10,9 @@ print_usage_and_exit () {
 Usage   : ${0##*/} <soft ledger>
 Options : -d<output dir>
 
-make inventory files from <soft ledger>
+make ansible playbook files from <soft ledger>.
+
+-d: specify the <output dir> into which output files
 USAGE
   exit 1
 }

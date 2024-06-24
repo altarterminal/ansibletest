@@ -60,6 +60,7 @@ readonly SOFT_LEDGER=${opt_s}
 
 jq -c '.[]' "${SOFT_LEDGER}"                                        |
 while read -r soft; do
+  # extract info
   name=$(echo "${soft}" | jq -r '.name')
   cmd=$(echo "${soft}"  | jq -r '.cmd')
   chosts=$(jq -r '.[].name' "${HOST_LEDGER}"                        |
@@ -70,15 +71,19 @@ while read -r soft; do
            jq -R .                                                  |
            jq -cs .                                                 )
 
+  # construct expressions
   printf '{"name":"%s", "cmd":"%s", "hosts":%s},\n'                 \
          "${name}" "${cmd}" "${chosts}"
 done                                                                |
 
+# add the end element for dummy
 {
-  printf '[\n'
   cat
   printf '{"name":"dummy", "cmd":"dummy", "hosts":["dummy"]}'
-  printf ']\n'
 }                                                                   |
 
+# add prefix and suffix to express array
+{ printf '[\n'; cat; printf ']\n'; }                                |
+
+# extract the actual elements
 jq '.[0:-1]'
