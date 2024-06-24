@@ -75,13 +75,13 @@ sort                                                                |
 
 while read -r name result nghosts
 do
-  RECORD_FILE="${RECORD_DIR}/${name}_record.yml"
+  record_file="${RECORD_DIR}/${name}_record.yml"
 
   # if the record file not exists, make and initialize it
-  if [ ! -e "${RECORD_FILE}" ]; then
-    echo "${0##*/}: <${RECORD_FILE}> not exist so make it" 1>&2
-    mkdir -p "$(dirname ${RECORD_FILE})"
-    printf '[]\n' > "${RECORD_FILE}"
+  if [ ! -e "${record_file}" ]; then
+    echo "${0##*/}: <${record_file}> not exist so make it" 1>&2
+    mkdir -p "$(dirname ${record_file})"
+    printf '[]\n' > "${record_file}"
   fi
  
   ver=$(cat "${LEDGER_FILE}"                                        |
@@ -94,8 +94,8 @@ do
   exp=$(printf "${exp}" "${DATE}" "${result}" "${ver}" "${hosts}")
 
   # make the record file after update
-  jq "${exp}" "${RECORD_FILE}" > "${RECORD_FILE}.tmp"
+  jq "${exp}" "${record_file}" > "${record_file}.tmp"
 
   # replace the record file
-  mv "${RECORD_FILE}.tmp" "${RECORD_FILE}"
+  mv "${record_file}.tmp" "${record_file}"
 done
