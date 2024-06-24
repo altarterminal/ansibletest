@@ -1,11 +1,23 @@
-{
-  "hostlist":[
-    {"name": "ansiblelocalhost0", "ip": "127.0.0.1", "port": "50000"},
-    {"name": "ansiblelocalhost1", "ip": "127.0.0.1", "port": "50001"},
-    {"name": "ansiblelocalhost2", "ip": "127.0.0.1", "port": "50002"}
-  ],
-  "softlist":[
-    {"name": "VIM", "ver": "Vi IMproved 8.2", "cmd": "vim", "opt": "--version", "hosts":["ansiblelocalhost0", "ansiblelocalhost1", "ansiblelocalhost2"]},
-    {"name": "Docker", "ver": "Docker version 20.10.24", "cmd": "docker", "opt": "--version", "hosts":["ansiblelocalhost0", "ansiblelocalhost1"]}
-  ]
-}
+[
+  {
+    "name": "VIM",
+    "cmd": "vim",
+    "opt": "--version",
+    "ver": "Vi IMproved 8.2",
+    "hosts": [
+      "ansiblelocalhost0",
+      "ansiblelocalhost1",
+      "ansiblelocalhost2"
+    ]
+  },
+
+  {
+    "name": "Docker",
+    "cmd": "docker",
+    "opt": "--version",
+    "ver": "Docker version 20.10.24",
+    "hosts": [
+      "ansiblelocalhost2"
+    ]
+  }
+]
