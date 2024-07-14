@@ -91,8 +91,8 @@ do
           jq -cr '.[] | select(.name=="'"${name}"'") | .hosts'      )
 
   # construct the update expression
-  exp='. |= .+[{"date":"%s","result":"%s","hosts":%s}]'
-  exp=$(printf "${exp}" "${DATE}" "${result}" "${hosts}")
+  exp=$(printf '. |= .+[{"date":"%s","result":"%s","hosts":%s}]'    \
+        "${DATE}" "${result}" "${hosts}"                            )
 
   # make the record file after update
   jq "${exp}" "${record_file}" > "${record_file}.tmp"

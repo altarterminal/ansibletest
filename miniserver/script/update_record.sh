@@ -79,24 +79,47 @@ if [ ! -e "${RECORD_FILE}" ]; then
   printf '[]\n' > "${RECORD_FILE}"
 fi
 
-# input the result
-read -r name result nghosts < ${RESULT_FILE:-'/dev/stdin'}  
+cat ${RESULT_FILE:+"${RESULT_FILE}"}                                |
 
-# if invalid result is included, output warning
-if [ _"${name}" != _'Update' ]; then
-  printf '%s: the result (%s, %s, %s) is invalid for <Update>\n'    \
-    "${0##*/}" "${name}" "${result}" "${nghosts}"                   \
-    1>&2
-fi
+# check whether the input is results for apt update
+awk '
+{
+  name = $1; result = $2; nghosts=$3;
 
-hosts=$(jq '.[].name' "${LEDGER_FILE}" | jq '.' -sc)
+  if (name != "Update") {
+    printf "%s: [%s %s %s] at line %d is invalid for <Update>\n",   \
+           "'"${0##*/}"'", name, result, nghosts, NR > "/dev/stderr";
+  }
+  else {
+    valid_line_no++;
+    buf[valid_line_no] = $0;
+  }
+}
 
-# construct the update expression
-exp='. |= .+[{"date":"%s","result":"%s","hosts":%s}]'
-exp=$(printf "${exp}" "${DATE}" "${result}" "${hosts}")
+END {
+  if (NR > 1) {
+    printf "%s: there are multiline inputs\n",                      \
+           "'"${0##*/}"'" > "/dev/stderr";
+  }
 
-# make the record file after update
-jq "${exp}" "${RECORD_FILE}" > "${RECORD_FILE}.tmp"
+  print buf[valid_line_no];
+}
+'                                                                   |
 
-# replace the record file
-mv "${RECORD_FILE}.tmp" "${RECORD_FILE}"
+# main update routine
+{
+  # input the result
+  read -r name result nghosts
+
+  hosts=$(jq '.[].name' "${LEDGER_FILE}" | jq '.' -sc)
+
+  # construct the update expression
+  exp=$(printf '. |= .+[{"date":"%s","result":"%s","hosts":%s}]'    \
+        "${DATE}" "${result}" "${hosts}"                            )
+
+  # make the record file after update
+  jq "${exp}" "${RECORD_FILE}" > "${RECORD_FILE}.tmp"
+
+  # replace the record file
+  mv "${RECORD_FILE}.tmp" "${RECORD_FILE}"
+}
