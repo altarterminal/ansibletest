@@ -84,18 +84,25 @@ mkdir -p "${SOFTC_PLAYBOOK_DIR}"
 mkdir -p "${SOFTC_RECORD_DIR}"
 mkdir -p "${UPDATE_RECORD_DIR}"
 
+echo "start: make pre-required files"
 ${SCRIPT_DIR}/inventory.sh -s"${SOFT_LEDGER}" "${HOST_LEDGER}" >"${INVENTORY}"
 ${SCRIPT_DIR}/softc_ledger.sh -s"${SOFT_LEDGER}" "${HOST_LEDGER}" >"${SOFTC_LEDGER}"
+echo "end: make pre-required files"
+echo ""
 
+echo "start: make playbooks"
 ${SCRIPT_DIR}/soft_playbook.sh  -d${SOFT_PLAYBOOK_DIR}  ${SOFT_LEDGER}
 ${SCRIPT_DIR}/softc_playbook.sh -d${SOFTC_PLAYBOOK_DIR} ${SOFTC_LEDGER}
 ${SCRIPT_DIR}/update_playbook.sh >"${UPDATE_PLAYBOOK}"
+echo "end: make playbooks"
+echo ""
 
 #####################################################################
 # exec playbook
 #####################################################################
 
 # execute: check software version
+echo "start: check software version"
 find "${SOFT_PLAYBOOK_DIR}" -name "playbook_*.yml"                  |
 sort                                                                |
 while read -r playbook
@@ -103,8 +110,11 @@ do
   ${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" "${playbook}"
 done                                                                |
 ${SCRIPT_DIR}/soft_record.sh -l"${SOFT_LEDGER}" -r"${SOFT_RECORD_DIR}"
+echo "end: check software version"
+echo ""
 
 # execute: check software NOT installed
+echo "start: check software NOT installed"
 find "${SOFTC_PLAYBOOK_DIR}" -name "playbook_*.yml"                 |
 sort                                                                |
 while read -r playbook
@@ -112,8 +122,11 @@ do
   ${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" "${playbook}"
 done                                                                |
 ${SCRIPT_DIR}/softc_record.sh -l"${SOFTC_LEDGER}" -r"${SOFTC_RECORD_DIR}"
+echo "end: check software NOT installed"
+echo ""
 
 # execute: apt upgrade
+echo "start: apt upgrade"
 ${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" "${UPDATE_PLAYBOOK}" |
 ${SCRIPT_DIR}/update_record.sh -l"${HOST_LEDGER}" -r"${UPDATE_RECORD_FILE}"
-
+echo "end: apt upgrade"
