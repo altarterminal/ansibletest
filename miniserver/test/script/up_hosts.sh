@@ -10,6 +10,7 @@ TEST_DIR="${THIS_DIR}/.."
 
 USER_NAME='ansible'
 USER_ID='1234'
+CONTAINER_NUM=3
 
 #####################################################################
 # main routine
@@ -19,6 +20,6 @@ USER_ID='1234'
   cd "${TEST_DIR}"
   git clone 'https://github.com/altarterminal/dockertest.git'
   cd 'dockertest/ubuntu'
-  ./script/setup.sh -u"${USER_NAME}" -i"${USER_ID}"
+  ./script/setup.sh -u"${USER_NAME}" -i"${USER_ID}" -n"${CONTAINER_NUM}"
   ./script/up_hosts.sh
 )

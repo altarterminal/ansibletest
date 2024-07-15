@@ -1,5 +1,5 @@
 - name: install the old software version
-  hosts: ansiblelocalhost0,ansiblelocalhost1
+  hosts: localhost1,localhost2
   become: yes
   tasks:
     - name: install dependency
@@ -41,14 +41,14 @@
           - docker-ce-cli=5:20.10.24~3-0~ubuntu-jammy
 
 - name: hold the software version
-  hosts: ansiblelocalhost0
+  hosts: localhost1
   become: yes
   tasks:
     - name: hold the software version
       shell: apt-mark hold docker-ce docker-ce-cli
 
 - name: update to the latest version
-  hosts: ansiblelocalhost0,ansiblelocalhost1
+  hosts: localhost1,localhost2
   become: yes
   tasks:
     - name: update to the latest version
