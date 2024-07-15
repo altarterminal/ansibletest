@@ -1,5 +1,0 @@
-[
-  {"name": "ansiblelocalhost0", "ip": "127.0.0.1", "port": "50000"},
-  {"name": "ansiblelocalhost1", "ip": "127.0.0.1", "port": "50001"},
-  {"name": "ansiblelocalhost2", "ip": "127.0.0.1", "port": "50002"}
-]
