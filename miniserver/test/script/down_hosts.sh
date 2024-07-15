@@ -20,5 +20,5 @@ fi
 
 (
   cd "${DOCKER_DIR}"
-  docker compose down
+  ./script/down_hosts.sh
 )

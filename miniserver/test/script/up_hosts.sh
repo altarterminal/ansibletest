@@ -19,6 +19,6 @@ USER_ID='1234'
   cd "${TOP_DIR}"
   git clone 'https://github.com/altarterminal/dockertest.git'
   cd 'dockertest/ubuntu'
-  ./setup.sh -u"${USER_NAME}" -i"${USER_ID}"
-  ./up_hosts.sh
+  ./script/setup.sh -u"${USER_NAME}" -i"${USER_ID}"
+  ./script/up_hosts.sh
 )
