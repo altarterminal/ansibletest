@@ -6,31 +6,19 @@ set -eu
 #####################################################################
 
 THIS_DIR=$(dirname $0)
+TOP_DIR="${THIS_DIR}/.."
 
-TEMPLATE_DIR="${THIS_DIR}/../template"
-DOCKER_DIR="${THIS_DIR}/../dockerfile"
-
-DOCKER_TEMPLATE="${TEMPLATE_DIR}/Dockerfile.template"
-DOCKER_ENTITY="${DOCKER_DIR}/Dockerfile"
-
-DOCKER_USER='ansible'
-DOCKER_UID='1234'
+USER_NAME='ansible'
+USER_ID='1234'
 
 #####################################################################
 # main routine
 #####################################################################
 
-mkdir -p "${DOCKER_DIR}"
-
-cp "${HOME}/.ssh/id_rsa"     "${DOCKER_DIR}"
-cp "${HOME}/.ssh/id_rsa.pub" "${DOCKER_DIR}"
-
-cat "${DOCKER_TEMPLATE}"                                            |
-sed 's!<<ansible_user>>!'"${DOCKER_USER}"'!'                        |
-sed 's!<<ansible_uid>>!'"${DOCKER_UID}"'!'                          |
-cat > "${DOCKER_ENTITY}"
-
 (
-  cd "${THIS_DIR}"
-  docker compose up -d
+  cd "${TOP_DIR}"
+  git clone 'https://github.com/altarterminal/dockertest.git'
+  cd 'dockertest/ubuntu'
+  ./setup.sh -u"${USER_NAME}" -i"${USER_ID}"
+  ./up_hosts.sh
 )
