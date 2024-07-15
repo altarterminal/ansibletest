@@ -6,8 +6,8 @@ set -eu
 #####################################################################
 
 THIS_DIR=$(dirname $0)
-TOP_DIR="${THIS_DIR}/.."
-DOCKER_DIR="${TOP_DIR}/dockertest/ubuntu"
+TEST_DIR="${THIS_DIR}/.."
+DOCKER_DIR="${TEST_DIR}/dockertest/ubuntu"
 
 if [ ! -d "${DOCKER_DIR}" ] || [ ! -x "${DOCKER_DIR}" ]; then
   echo "${0##*/}: <${DOCKER_DIR}> cannot be accessed" 1>&2
