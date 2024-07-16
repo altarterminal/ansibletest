@@ -18,7 +18,13 @@ CONTAINER_NUM=3
 
 (
   cd "${TEST_DIR}"
-  git clone 'https://github.com/altarterminal/dockertest.git'
+
+  if [ ! -e 'dockertest' ]; then
+    git clone 'https://github.com/altarterminal/dockertest.git'
+  else
+    ( cd dockertest; git pull; )
+  fi
+
   cd 'dockertest/ubuntu'
   ./script/setup.sh -u"${USER_NAME}" -i"${USER_ID}" -n"${CONTAINER_NUM}"
   ./script/up_hosts.sh
