@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eux
+set -eu
 
 #####################################################################
 # setting 
@@ -20,6 +20,9 @@ PLAYBOOK_FILE="${PLAYBOOK_DIR}/prepare_situation.yml"
 # prepare
 #####################################################################
 
+cd "${TEST_DIR}"
+
+[ -e 'ledgertest' ] && rm -rf 'ledgertest'
 git clone 'https://github.com/altarterminal/ledgertest.git'
 
 ${SCRIPT_DIR}/inventory.sh                                          \
