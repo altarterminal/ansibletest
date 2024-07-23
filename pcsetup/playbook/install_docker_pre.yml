@@ -1,0 +1,24 @@
+- name: install docker pre process
+  hosts: all
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: install dependency
+      apt:
+        name: 
+          - ca-certificates
+          - gnupg
+          - lsb-release
+
+    - name: check tools
+      shell: |
+        type wget >/dev/null 2>&1
+        wget -q -O - www.google.com >/dev/null
+
+    - name: remove existing software
+      apt:
+        name:
+          - docker-ce-cli
+          - docker-ce
+        autoremove: yes
+        state: absent

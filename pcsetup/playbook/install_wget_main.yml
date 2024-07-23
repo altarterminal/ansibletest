@@ -1,0 +1,9 @@
+- name: install wget main process
+  hosts: all
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: install wget
+      apt:
+        name: 
+          - wget

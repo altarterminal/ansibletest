@@ -1,0 +1,16 @@
+- name: install wget post process
+  hosts: all
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: set proxy
+      shell: |
+        if type wget >/dev/null 2>&1; then
+          if ! cat '/etc/wgetrc' | grep -q '^http_proxy'; then
+            echo 'http_proxy = http://{{ proxy_setting }}'  >> '/etc/wgetrc'
+          fi
+          if ! cat '/etc/wgetrc' | grep -q '^https_proxy'; then
+            echo 'https_proxy = http://{{ proxy_setting }}' >> '/etc/wgetrc'
+          fi
+        fi
+      when: proxy_setting != ""

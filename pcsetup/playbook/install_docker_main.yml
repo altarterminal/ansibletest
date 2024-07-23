@@ -1,0 +1,30 @@
+- name: install docker main process
+  hosts: all
+  gather_facts: no
+  become: yes
+  vars:
+    docker_ver: "5:25.0.5-1~ubuntu.22.04~jammy"
+  tasks:
+    - name: register external repository
+      shell: |
+        GPG='/etc/apt/keyrings/docker.gpg'
+        URL='https://download.docker.com/linux/ubuntu'
+        ARCH=$(dpkg --print-architecture)
+        VER=$(lsb_release -cs)
+
+        mkdir -m 0755 -p /etc/apt/keyrings
+        [ -e ${GPG} ] && rm ${GPG}
+
+        wget -q -O - ${URL}/gpg | gpg --dearmor -o ${GPG}
+        echo "deb [arch=${ARCH} signed-by=${GPG}] ${URL} ${VER} stable" |
+        tee /etc/apt/sources.list.d/docker.list >/dev/null
+
+    - name: install the specific version docker
+      apt:
+        update_cache: yes
+        name:
+          - docker-ce-cli={{ docker_ver }}
+          - docker-ce={{ docker_ver }}
+
+    - name: hold the docker version
+      shell: apt-mark hold docker-ce-cli docker-ce
