@@ -69,8 +69,8 @@ while read -r soft; do
 
   # make completion playbook
   {
-    echo "- name: ${name}_complement"
-    echo "  hosts: hosts_${name}_complement"
+    echo "- name: ${name}"
+    echo "  hosts: hosts_${name}"
     echo "  gather_facts: no"
     echo "  tasks:"
     echo "    - name: check ${name} NOT exists"
