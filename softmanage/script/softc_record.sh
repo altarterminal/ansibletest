@@ -80,6 +80,12 @@ name=$(printf '%s' "${RESULT_LINE}"    | awk '{print $1}')
 result=$(printf '%s' "${RESULT_LINE}"  | awk '{print $2}')
 nghosts=$(printf '%s' "${RESULT_LINE}" | awk '{print $3}')
 
+# check whether there are any results
+if [ "${result}" != 'OK' -a "${result}" != 'NG' ]; then
+  echo "${0##*/}: no result has been recorded for <${name}>. no hosts?" 1>&2
+  exit 0
+fi
+
 # if the record file not exists, make and initialize it
 if [ ! -e "${RECORD_FILE}" ]; then
   echo "${0##*/}: <${RECORD_FILE}> not exist so make it" 1>&2

@@ -86,6 +86,12 @@ if [ "${name}" != 'Update' ]; then
   exit 1
 fi
 
+# check whether there are any results
+if [ "${result}" != 'OK' -a "${result}" != 'NG' ]; then
+  echo "${0##*/}: no result has been recorded" 1>&2
+  exit 1
+fi
+
 # if the record file not exists, make and initialize it
 if [ ! -e "${RECORD_FILE}" ]; then
   echo "${0##*/}: <${RECORD_FILE}> not exist so make it" 1>&2

@@ -63,6 +63,19 @@ readonly INVENTORY_FILE=${opt_i}
 # main routine
 #####################################################################
 
+# check target hosts
+HOST_NUM=$(ansible-playbook \
+           -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}" --list-hosts   |
+           grep '^ *hosts ([0-9]*):$'                               |
+           sed 's/^ *hosts (\([0-9]*\)):$/\1/'                      )
+if [ "${HOST_NUM}" = '0' ]; then
+  name=$(basename "${PLAYBOOK_FILE}" .yml | sed 's/^playbook_//')
+  echo "${name} - -"
+  echo "${0##*/}: no hosts for playbook <${PLAYBOOK_FILE}>" 1>&2
+  exit 0
+fi
+
+# execute main playbook
 ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}"          |
 
 awk '
