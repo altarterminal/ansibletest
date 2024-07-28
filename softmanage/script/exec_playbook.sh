@@ -8,9 +8,11 @@ set -eu
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
 Usage   : ${0##*/} -i<ansible inventory> <ansible playbook>
-Options :
+Options : -d<output dir>
 
 execute <ansible playbook> with <ansible inventory> and parse the result.
+
+-d: specify whether output debug log and the directory to output.
 USAGE
   exit 1
 }
@@ -21,6 +23,7 @@ USAGE
 
 opr=''
 opt_i=''
+opt_d=''
 
 i=1
 for arg in ${1+"$@"}
@@ -28,6 +31,7 @@ do
   case "$arg" in
     -h|--help|--version) print_usage_and_exit ;;
     -i*)                 opt_i=${arg#-i}      ;; 
+    -d*)                 opt_d=${arg#-d}      ;;
     *)
       if [ $i -eq $# ] && [ -z "$opr" ]; then
         opr=$arg
@@ -56,8 +60,22 @@ if [ ! -f "${opt_i}" ] || [ ! -r "${opt_i}" ]; then
   exit 1
 fi
 
+if [ -n "${opt_d}" ]; then
+  if [ -e "${opt_d}" ] && [ ! -d "${opt_d}" ]; then
+    echo "${0##*/}: <${opt_d}> is not a directory" 1>&2
+    exit 1
+  fi
+
+  mkdir -p "${opt_d}"
+  if [ ! -d "${opt_d}" ] || [ ! -w "${opt_d}" ]; then
+    echo "${0##*/}: <${opt_d}> cannot be opened" 1>&2
+    exit 1
+  fi
+fi
+
 readonly PLAYBOOK_FILE=${opr}
 readonly INVENTORY_FILE=${opt_i}
+readonly DEBUG_DIR=${opt_d}
 
 #####################################################################
 # main routine
@@ -77,6 +95,13 @@ fi
 
 # execute main playbook
 ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}"          |
+
+if [ -n "${DEBUG_DIR}" ]; then
+  DEBUG_FILE="ansible_${PLAYBOOK_FILE##*/}_$(date +%Y%m%d-%H%M%S).txt"
+  tee "${DEBUG_DIR}/${DEBUG_FILE}"
+else
+  cat
+fi                                                                  |
 
 awk '
 /^PLAY \[[^]]*\] / {
