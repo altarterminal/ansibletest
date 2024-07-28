@@ -98,7 +98,7 @@ hosts=$(cat "${LEDGER_FILE}"                                        |
         jq -cr '.[] | select(.name=="'"${name}"'") | .hosts'        )
 
 # construct the update expression
-exp=$(printf '. |= .+[{"date":"%s","result":"%s","hosts":"%s"}]'    \
+exp=$(printf '. |= .+[{"date":"%s","result":"%s","hosts":%s}]'      \
       "${DATE}" "${result}" "${hosts}"                              )
 
 # make the record file after update
