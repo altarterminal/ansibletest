@@ -100,8 +100,12 @@ awk '
     failhost[name] = failhost[name] "";
   }
   else {
-    if (failhost[name] == "") { failhost[name] =     host; }
-    else                      { failhost[name] = "," host; }
+    if (failhost[name] == "") {
+      failhost[name] =                    host;
+    }
+    else                      {
+      failhost[name] = failhost[name] "," host;
+    }
   }
 }
 
