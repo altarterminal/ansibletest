@@ -8,10 +8,13 @@ set -eu
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
 Usage   : ${0##*/} -l<host ledger> -r<record file> <result>
-Options : -r
+Options :
 
 update <record file> with info of <host ledger> and <result>
--r: specify the file to record result
+<result> should be the format as below
+  'Update' <the result(OK/NG)> <the NG hosts>
+
+-r: specify the file to which the result be added.
 USAGE
   exit 1
 }
@@ -56,21 +59,32 @@ if [ -e "${opt_r}" ]; then
   fi
 fi
 
-if [ "_${opr}" = '_' ] || [ "_${opr}" = '_-' ]; then
-  opr=''
-elif [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
-  echo "${0##*/}: <${opr}> cannot be opened" 1>&2
-  exit 1
-fi
+#if [ "_${opr}" = '_' ] || [ "_${opr}" = '_-' ]; then
+#  opr=''
+#elif [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
+#  echo "${0##*/}: <${opr}> cannot be opened" 1>&2
+#  exit 1
+#fi
 
 readonly LEDGER_FILE=${opt_l}
 readonly RECORD_FILE="${opt_r}"
-readonly RESULT_FILE=${opr}
-readonly DATE=$(date '+%Y/%m/%d')
+readonly RESULT_LINE=${opr}
+readonly DATE=$(date '+%Y/%m/%d-%H:%M:%S')
 
 #####################################################################
 # main routine
 #####################################################################
+
+# decompose the result
+name=$(printf '%s' "${RESULT_LINE}"    | awk '{print $1}')
+result=$(printf '%s' "${RESULT_LINE}"  | awk '{print $2}')
+nghosts=$(printf '%s' "${RESULT_LINE}" | awk '{print $3}')
+
+# check whether the result is for 'Software Update'
+if [ "${name}" != 'Update' ]; then
+  echo "${0##*/}: the name in result is not Update but <${name}>" 1>&2
+  exit 1
+fi
 
 # if the record file not exists, make and initialize it
 if [ ! -e "${RECORD_FILE}" ]; then
@@ -79,47 +93,15 @@ if [ ! -e "${RECORD_FILE}" ]; then
   printf '[]\n' > "${RECORD_FILE}"
 fi
 
-cat ${RESULT_FILE:+"${RESULT_FILE}"}                                |
+# extract the parameter
+hosts=$(jq '.[].name' "${LEDGER_FILE}" | jq '.' -sc)
 
-# check whether the input is results for apt update
-awk '
-{
-  name = $1; result = $2; nghosts=$3;
+# construct the update expression
+exp=$(printf '. |= .+[{"date":"%s","result":"%s","hosts":%s}]'      \
+      "${DATE}" "${result}" "${hosts}"                              )
 
-  if (name != "Update") {
-    printf "%s: [%s %s %s] at line %d is invalid for <Update>\n",   \
-           "'"${0##*/}"'", name, result, nghosts, NR > "/dev/stderr";
-  }
-  else {
-    valid_line_no++;
-    buf[valid_line_no] = $0;
-  }
-}
+# make the record file after update
+jq "${exp}" "${RECORD_FILE}" > "${RECORD_FILE}.tmp"
 
-END {
-  if (NR > 1) {
-    printf "%s: there are multiline inputs\n",                      \
-           "'"${0##*/}"'" > "/dev/stderr";
-  }
-
-  print buf[valid_line_no];
-}
-'                                                                   |
-
-# main update routine
-{
-  # input the result
-  read -r name result nghosts
-
-  hosts=$(jq '.[].name' "${LEDGER_FILE}" | jq '.' -sc)
-
-  # construct the update expression
-  exp=$(printf '. |= .+[{"date":"%s","result":"%s","hosts":%s}]'    \
-        "${DATE}" "${result}" "${hosts}"                            )
-
-  # make the record file after update
-  jq "${exp}" "${RECORD_FILE}" > "${RECORD_FILE}.tmp"
-
-  # replace the record file
-  mv "${RECORD_FILE}.tmp" "${RECORD_FILE}"
-}
+# replace the record file
+mv "${RECORD_FILE}.tmp" "${RECORD_FILE}"

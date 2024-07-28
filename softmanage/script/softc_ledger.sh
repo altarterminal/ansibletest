@@ -61,7 +61,7 @@ readonly SOFT_LEDGER=${opt_s}
 jq -c '.[]' "${SOFT_LEDGER}"                                        |
 while read -r soft; do
   # extract info
-  name=$(echo "${soft}" | jq -r '.name')
+  name=$(echo "${soft}" | jq -r '.name' | xargs printf '%s_complement')
   cmd=$(echo "${soft}"  | jq -r '.cmd')
   chosts=$(jq -r '.[].name' "${HOST_LEDGER}"                        |
            eval $(echo "${soft}"                                    |

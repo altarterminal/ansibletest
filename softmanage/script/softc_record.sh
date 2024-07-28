@@ -7,13 +7,14 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} -l<softc ledger> <result>
-Options : -r<directory>
+Usage   : ${0##*/} -l<softc ledger> -r<record file> <result>
+Options :
 
-update <record> with info of <softc ledger> and <result>.
-the <result> must have the suffix soft name of 'complement'.
+update <record file> with info of <softc ledger> and <result>.
+<result> should be the format as below
+  <the name of soft>_complement <the result(OK/NG)> <the NG hosts>
 
--r: specify the <direcotry> in which record files are included
+-r: specify the <record file> to which the result be added.
 USAGE
   exit 1
 }
@@ -24,7 +25,7 @@ USAGE
 
 opr=''
 opt_l=''
-opt_r='.'
+opt_r=''
 
 i=1
 for arg in ${1+"$@"}
@@ -51,52 +52,51 @@ if [ ! -f "${opt_l}" ] || [ ! -r "${opt_l}" ]; then
   exit 1
 fi
 
-if [ ! -d "${opt_r}" ] || [ ! -w "${opt_r}" ]; then
-  echo "${0##*/}: <${opt_r}> cannot be accessed" 1>&2
-  exit 1
+if [ -e "${opt_r}" ]; then
+  if [ ! -f "${opt_r}" ] || [ ! -w "${opt_r}" ]; then
+    echo "${0##*/}: <${opt_r}> cannot be accessed" 1>&2
+    exit 1
+  fi
 fi
 
-if [ "_${opr}" = '_' ] || [ "_${opr}" = '_-' ]; then
-  opr=''
-elif [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
-  echo "${0##*/}: <${opr}> cannot be opened" 1>&2
-  exit 1
-fi
+#if [ "_${opr}" = '_' ] || [ "_${opr}" = '_-' ]; then
+#  opr=''
+#elif [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
+#  echo "${0##*/}: <${opr}> cannot be opened" 1>&2
+#  exit 1
+#fi
 
 readonly LEDGER_FILE=${opt_l}
-readonly RECORD_DIR=${opt_r%/}
-readonly RESULT_FILE=${opr}
-readonly DATE=$(date '+%Y/%m/%d')
+readonly RECORD_FILE=${opt_r}
+readonly RESULT_LINE=${opr}
+readonly DATE=$(date '+%Y/%m/%d-%H:%M:%S')
 
 #####################################################################
 # main routine
 #####################################################################
 
-cat ${RESULT_FILE:+"${RESULT_FILE}"}                                |
-sort                                                                |
+# decompose the result
+name=$(printf '%s' "${RESULT_LINE}"    | awk '{print $1}')
+result=$(printf '%s' "${RESULT_LINE}"  | awk '{print $2}')
+nghosts=$(printf '%s' "${RESULT_LINE}" | awk '{print $3}')
 
-while read -r cname result nghosts
-do
-  name=${cname%_complement}
-  record_file="${RECORD_DIR}/${cname}_record.yml"
+# if the record file not exists, make and initialize it
+if [ ! -e "${RECORD_FILE}" ]; then
+  echo "${0##*/}: <${RECORD_FILE}> not exist so make it" 1>&2
+  mkdir -p "$(dirname ${RECORD_FILE})"
+  printf '[]\n' > "${RECORD_FILE}"
+fi
 
-  # if the record file not exists, make and initialize it
-  if [ ! -e "${record_file}" ]; then
-    echo "${0##*/}: <${record_file}> not exist so make it" 1>&2
-    mkdir -p "$(dirname ${record_file})"
-    printf '[]\n' > "${record_file}"
-  fi
+# extract the parameter
+hosts=$(cat "${LEDGER_FILE}"                                        |
+        jq -cr '.[] | select(.name=="'"${name}"'") | .hosts'        )
 
-  hosts=$(cat "${LEDGER_FILE}"                                      |
-          jq -cr '.[] | select(.name=="'"${name}"'") | .hosts'      )
+# construct the update expression
+exp=$(printf '. |= .+[{"date":"%s","result":"%s","hosts":"%s"}]'    \
+      "${DATE}" "${result}" "${hosts}"                              )
 
-  # construct the update expression
-  exp=$(printf '. |= .+[{"date":"%s","result":"%s","hosts":%s}]'    \
-        "${DATE}" "${result}" "${hosts}"                            )
+# make the record file after update
+jq "${exp}" "${RECORD_FILE}" > "${RECORD_FILE}.tmp"
 
-  # make the record file after update
-  jq "${exp}" "${record_file}" > "${record_file}.tmp"
-
-  # replace the record file
-  mv "${record_file}.tmp" "${record_file}"
-done
+# replace the record file
+mv "${RECORD_FILE}.tmp" "${RECORD_FILE}"

@@ -75,5 +75,5 @@ while read -r soft; do
     echo "  tasks:"
     echo "    - name: check ${name} NOT exists"
     echo "      shell: '! type ${cmd}'"
-  } > "${OUTPUT_DIR}/playbook_${name}_complement.yml"
+  } > "${OUTPUT_DIR}/playbook_${name}.yml"
 done

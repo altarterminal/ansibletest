@@ -66,11 +66,13 @@ readonly INVENTORY="${ANSIBLE_DIR}/inventory.ini"
 readonly SOFTC_LEDGER="${ANSIBLE_DIR}/softc_ledger.json"
 readonly SOFT_PLAYBOOK_DIR="${ANSIBLE_DIR}/soft_playbook"
 readonly SOFTC_PLAYBOOK_DIR="${ANSIBLE_DIR}/softc_playbook"
-readonly UPDATE_PLAYBOOK="${ANSIBLE_DIR}/playbook_update.yml"
+readonly UPDATE_PLAYBOOK_DIR="${ANSIBLE_DIR}/update_playbook"
 
-readonly SOFT_RECORD_DIR="${THIS_DIR}/soft_record"
-readonly SOFTC_RECORD_DIR="${THIS_DIR}/softc_record"
-readonly UPDATE_RECORD_DIR="${THIS_DIR}/update_record"
+readonly UPDATE_PLAYBOOK="${UPDATE_PLAYBOOK_DIR}/playbook_update.yml"
+
+readonly SOFT_RECORD_DIR="${ANSIBLE_DIR}/soft_record"
+readonly SOFTC_RECORD_DIR="${ANSIBLE_DIR}/softc_record"
+readonly UPDATE_RECORD_DIR="${ANSIBLE_DIR}/update_record"
 
 readonly UPDATE_RECORD_FILE="${UPDATE_RECORD_DIR}/Update_record.json"
 
@@ -82,6 +84,7 @@ mkdir -p "${SOFT_PLAYBOOK_DIR}"
 mkdir -p "${SOFT_RECORD_DIR}"
 mkdir -p "${SOFTC_PLAYBOOK_DIR}"
 mkdir -p "${SOFTC_RECORD_DIR}"
+mkdir -p "${UPDATE_PLAYBOOK_DIR}"
 mkdir -p "${UPDATE_RECORD_DIR}"
 
 echo "start: make pre-required files"
@@ -107,9 +110,13 @@ find "${SOFT_PLAYBOOK_DIR}" -name "playbook_*.yml"                  |
 sort                                                                |
 while read -r playbook
 do
-  ${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" "${playbook}"
-done                                                                |
-${SCRIPT_DIR}/soft_record.sh -l"${SOFT_LEDGER}" -r"${SOFT_RECORD_DIR}"
+  name=$(basename "${playbook}" .yml | sed 's/^playbook_//')
+  record_file="${SOFT_RECORD_DIR}/${name}_record.yml"
+  result=$(${SCRIPT_DIR}/exec_playbook.sh \
+    -i"${INVENTORY}" "${playbook}")
+  ${SCRIPT_DIR}/soft_record.sh  \
+    -l"${SOFT_LEDGER}" -r"${record_file}" "${result}"
+done
 echo "end: check software version"
 echo ""
 
@@ -119,14 +126,21 @@ find "${SOFTC_PLAYBOOK_DIR}" -name "playbook_*.yml"                 |
 sort                                                                |
 while read -r playbook
 do
-  ${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" "${playbook}"
-done                                                                |
-${SCRIPT_DIR}/softc_record.sh -l"${SOFTC_LEDGER}" -r"${SOFTC_RECORD_DIR}"
+  name=$(basename "${playbook}" .yml | sed 's/^playbook_//')
+  record_file="${SOFTC_RECORD_DIR}/${name}_record.yml"
+  result=$(${SCRIPT_DIR}/exec_playbook.sh \
+    -i"${INVENTORY}" "${playbook}")
+
+  ${SCRIPT_DIR}/softc_record.sh \
+    -l"${SOFTC_LEDGER}" -r"${record_file}" "${result}"
+done
 echo "end: check software NOT installed"
 echo ""
 
 # execute: apt upgrade
 echo "start: apt upgrade"
-${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" "${UPDATE_PLAYBOOK}" |
-${SCRIPT_DIR}/update_record.sh -l"${HOST_LEDGER}" -r"${UPDATE_RECORD_FILE}"
+result=$(${SCRIPT_DIR}/exec_playbook.sh \
+  -i"${INVENTORY}" "${UPDATE_PLAYBOOK}")
+${SCRIPT_DIR}/update_record.sh \
+  -l"${HOST_LEDGER}" -r"${UPDATE_RECORD_FILE}" "${result}"
 echo "end: apt upgrade"
