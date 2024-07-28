@@ -94,8 +94,8 @@ echo "end: make pre-required files"
 echo ""
 
 echo "start: make playbooks"
-${SCRIPT_DIR}/soft_playbook.sh  -d${SOFT_PLAYBOOK_DIR}  ${SOFT_LEDGER}
-${SCRIPT_DIR}/softc_playbook.sh -d${SOFTC_PLAYBOOK_DIR} ${SOFTC_LEDGER}
+${SCRIPT_DIR}/soft_playbook.sh  -d"${SOFT_PLAYBOOK_DIR}"  "${SOFT_LEDGER}"
+${SCRIPT_DIR}/softc_playbook.sh -d"${SOFTC_PLAYBOOK_DIR}" "${SOFTC_LEDGER}"
 ${SCRIPT_DIR}/update_playbook.sh >"${UPDATE_PLAYBOOK}"
 echo "end: make playbooks"
 echo ""
@@ -104,7 +104,7 @@ echo ""
 # exec playbook
 #####################################################################
 
-# execute: check software version
+# execute: check software version ###################################
 echo "start: check software version"
 find "${SOFT_PLAYBOOK_DIR}" -name "playbook_*.yml"                  |
 sort                                                                |
@@ -120,7 +120,7 @@ done
 echo "end: check software version"
 echo ""
 
-# execute: check software NOT installed
+# execute: check software NOT installed #############################
 echo "start: check software NOT installed"
 find "${SOFTC_PLAYBOOK_DIR}" -name "playbook_*.yml"                 |
 sort                                                                |
@@ -137,7 +137,7 @@ done
 echo "end: check software NOT installed"
 echo ""
 
-# execute: apt upgrade
+# execute: apt upgrade ##############################################
 echo "start: apt upgrade"
 result=$(${SCRIPT_DIR}/exec_playbook.sh \
   -i"${INVENTORY}" "${UPDATE_PLAYBOOK}")
