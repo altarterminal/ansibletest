@@ -12,10 +12,12 @@
         ARCH=$(dpkg --print-architecture)
         VER=$(lsb_release -cs)
 
-        mkdir -m 0755 -p /etc/apt/keyrings
+        mkdir -m 0755 -p $(dirname ${GPG})
         [ -e ${GPG} ] && rm ${GPG}
 
-        wget -q -O - ${URL}/gpg | gpg --dearmor -o ${GPG}
+        wget -q -O - ${URL}/gpg                                         |
+        gpg --dearmor -o ${GPG}
+
         echo "deb [arch=${ARCH} signed-by=${GPG}] ${URL} ${VER} stable" |
         tee /etc/apt/sources.list.d/docker.list >/dev/null
 
