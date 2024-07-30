@@ -5,18 +5,18 @@
   tasks:
      - name: set proxy
        shell: |
-         if type docker >/dev/null 2>&1; then
-           mkdir -p '/etc/systemd/system/docker.sevice.d'
+         type docker >/dev/null 2>&1
 
-           {
-             echo '[service]'
-             echo 'Environment="HTTP_PROXY=http://{{ proxy_setting }}"'
-             echo 'Environment="HTTPS_PROXY=http://{{ proxy_setting }}"'
-           }                                                              |
-           tee '/etc/systemd/system/docker.sevice.d/http-proxy.conf'      |
-           cat > /dev/null
+         mkdir -p '/etc/systemd/system/docker.sevice.d'
 
-           systemctl daemon-reload
-           systemctl restart docker
-         fi
+         {
+           echo '[service]'
+           echo 'Environment="HTTP_PROXY=http://{{ proxy_setting }}"'
+           echo 'Environment="HTTPS_PROXY=http://{{ proxy_setting }}"'
+         }                                                            |
+         tee '/etc/systemd/system/docker.sevice.d/http-proxy.conf'    |
+         cat >/dev/null
+
+         systemctl daemon-reload
+         systemctl restart docker
        when: proxy_setting != ""
