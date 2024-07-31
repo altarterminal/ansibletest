@@ -1,0 +1,18 @@
+- name: install yq main process
+  hosts: all
+  gather_facts: yes
+  become: yes
+  environment:
+    http_proxy:  "{{ proxy_setting }}"
+    https_proxy: "{{ proxy_setting }}"
+  vars:
+    ARCH: "{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
+  tasks:
+  - name: install yq
+    get_url:
+      url: "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_{{ ARCH }}"
+      dest: /usr/local/bin/yq
+      owner: root
+      group: root
+      mode: o=rwx,g=rx,o=rx
+      use_proxy: "{{ 'true' if proxy_setting != '' else 'false' }}"
