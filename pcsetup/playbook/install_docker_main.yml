@@ -25,17 +25,16 @@
         GPG_PATH='/etc/apt/keyrings/docker.gpg'
         DOCKER_URL='https://download.docker.com/linux/ubuntu'
         LIST_PATH='/etc/apt/sources.list.d/docker.list'
+
         mkdir -m 0755 -p $(dirname "${GPG_PATH}")
         [ -e "${GPG_PATH}" ] && rm "${GPG_PATH}"
 
         cat '/tmp/docker_gpg_{{ ansible_date_time.date }}'           |
         gpg --dearmor -o "${GPG_PATH}"
 
-        LIST_LINE=$(printf 'deb [arch=%s signed-by=%s] %s %s stable' \
-                 "$(dpkg --print-architecture)" "${GPG_PATH}"        \
-                 "${DOCKER_URL}" "$(lsb_release -cs)"                )
-
-        echo "${LIST_LINE}"                                          |
+        printf 'deb [arch=%s signed-by=%s] %s %s stable'             \
+               "$(dpkg --print-architecture)" "${GPG_PATH}"          \
+               "${DOCKER_URL}" "$(lsb_release -cs)"                  |
         tee "${LIST_PATH}" >/dev/null
 
     - name: delete tmp docker gpg
