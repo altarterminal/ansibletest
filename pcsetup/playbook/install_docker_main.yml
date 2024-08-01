@@ -2,31 +2,52 @@
   hosts: all
   gather_facts: no
   become: yes
+  environment:
+    http_proxy:  "{{ proxy_setting }}"
+    https_proxy: "{{ proxy_setting }}"
   vars:
-    docker_ver: "5:25.0.5-1~ubuntu.22.04~jammy"
+    DOCKER_VER: "5:25.0.5-1~ubuntu.22.04~jammy"
   tasks:
+    - name: gather date and time
+      setup:
+        gather_subset:
+          - "date_time"
+      when: ansible_date_time is not defined
+
+    - name: download tmp docker gpg
+      get_url:
+        url: "https://download.docker.com/linux/ubuntu/gpg"
+        dest: "/tmp/docker_gpg_{{ ansible_date_time.date }}"
+        use_proxy: "{{ 'true' if proxy_setting != '' else 'false' }}"
+
     - name: register external repository
       shell: |
-        GPG='/etc/apt/keyrings/docker.gpg'
-        URL='https://download.docker.com/linux/ubuntu'
-        ARCH=$(dpkg --print-architecture)
-        VER=$(lsb_release -cs)
+        GPG_PATH='/etc/apt/keyrings/docker.gpg'
+        DOCKER_URL='https://download.docker.com/linux/ubuntu'
+        LIST_PATH='/etc/apt/sources.list.d/docker.list'
+        mkdir -m 0755 -p $(dirname "${GPG_PATH}")
+        [ -e "${GPG_PATH}" ] && rm "${GPG_PATH}"
 
-        mkdir -m 0755 -p $(dirname ${GPG})
-        [ -e ${GPG} ] && rm ${GPG}
+        cat '/tmp/docker_gpg_{{ ansible_date_time.date }}'           |
+        gpg --dearmor -o "${GPG_PATH}"
 
-        wget -q -O - ${URL}/gpg                                         |
-        gpg --dearmor -o ${GPG}
+        LIST_LINE=$(printf 'deb [arch=%s signed-by=%s] %s %s stable' \
+                 "$(dpkg --print-architecture)" "${GPG_PATH}"        \
+                 "${DOCKER_URL}" "$(lsb_release -cs)"                )
 
-        echo "deb [arch=${ARCH} signed-by=${GPG}] ${URL} ${VER} stable" |
-        tee /etc/apt/sources.list.d/docker.list >/dev/null
+        echo "${LIST_LINE}"                                          |
+        tee "${LIST_PATH}" >/dev/null
+
+    - name: delete tmp docker gpg
+      shell: |
+        rm '/tmp/docker_gpg_{{ ansible_date_time.date }}'
 
     - name: install the specific version docker
       apt:
         update_cache: yes
         name:
-          - docker-ce-cli={{ docker_ver }}
-          - docker-ce={{ docker_ver }}
+          - docker-ce-cli={{ DOCKER_VER }}
+          - docker-ce={{ DOCKER_VER }}
 
     - name: hold the docker version
       shell: apt-mark hold docker-ce-cli docker-ce

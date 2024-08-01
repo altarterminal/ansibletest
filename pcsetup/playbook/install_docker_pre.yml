@@ -10,11 +10,6 @@
           - gnupg
           - lsb-release
 
-    - name: check tools
-      shell: |
-        type wget >/dev/null 2>&1
-        wget -q -O - www.google.com >/dev/null
-
     - name: remove existing software
       apt:
         name:
