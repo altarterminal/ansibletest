@@ -65,14 +65,12 @@ readonly PLAYBOOK_FILE=$(mktemp "${TEMPLATE_NAME}")
 trap "[ -e ${PLAYBOOK_FILE} ] && rm ${PLAYBOOK_FILE}" EXIT
 
 #####################################################################
-# utility
+# function
 #####################################################################
 
-exec_command_body () (
+exec_command () (
 inventory_file=$1
 command_string=$2
-
-LF=$(printf '\n_');LF=${LF%_}
 
 # check command string
 first_word=$(printf '%s\n' "${command_string}" | awk '{print $1}')
@@ -140,6 +138,6 @@ do
 
   case "${cmd}" in
     q) exit 0 ;;
-    *) exec_command_body "${INVENTORY_FILE}" "${cmd}" ;;
+    *) exec_command "${INVENTORY_FILE}" "${cmd}" ;;
   esac
 done
