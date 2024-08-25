@@ -133,7 +133,7 @@ done
 
 while true
 do
-  printf '%s' 'shell command or "q" > '
+  printf '%s' 'execute command ("q" for quit) > '
   read -r cmd
 
   case "${cmd}" in
