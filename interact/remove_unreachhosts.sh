@@ -100,7 +100,7 @@ do
   fi
 done                                                                |
 
-xargs -I{} printf '%s\n' "grep -v '^{} ' | "                        |
+xargs -I{} printf '%s\n' "sed 's#^{} #;{} #' | "                    |
 { cat; echo 'cat'; }                                                |
 tr '\n' ' '                                                         |
 
