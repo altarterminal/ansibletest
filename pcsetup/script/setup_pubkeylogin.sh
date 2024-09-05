@@ -10,13 +10,13 @@ print_usage_and_exit () {
 Usage   : ${0##*/} <inventory file>
 Options : -k<key path> -u<user name> -i<user id> -p<password> -d
 
-setup public key login
+setup public key login. if the user not exist, newly create the user.
 
 -k: specify the key path (default: ${HOME}/.ssh/id_rsa)
--u: specify the user name (default: the user who executes this)
--i: specify the id for uid and gid if the user is newly created (default: the uid of who executes this)
--p: specify the password if the user is newly created (default: <user name>)
--d: specify whether only output the playbook (default: no)
+-u: specify the user name (default: $(whoami) = the user name who executes this)
+-i: specify the id for uid and gid if the user is newly created (default: $(id -u) = the uid of who executes this)
+-p: specify the password if the user is newly created (default: $(whoami) = the user name who executes this)
+-d: enable dry-run (= only output the playbook and not execute it) (default: disabled)
 USAGE
   exit 1
 }
