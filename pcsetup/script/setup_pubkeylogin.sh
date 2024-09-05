@@ -8,12 +8,13 @@ set -eu
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
 Usage   : ${0##*/} <inventory file>
-Options : -k<key path> -u<user name> -p<password> -d
+Options : -k<key path> -u<user name> -i<user id> -p<password> -d
 
 setup public key login
 
 -k: specify the key path (default: ${HOME}/.ssh/id_rsa)
 -u: specify the user name (default: the user who executes this)
+-i: specify the id for uid and gid if the user is newly created (default: the uid of who executes this)
 -p: specify the password if the user is newly created (default: <user name>)
 -d: specify whether only output the playbook (default: no)
 USAGE
@@ -27,6 +28,7 @@ USAGE
 opr=''
 opt_k=${HOME}/.ssh/id_rsa
 opt_u=$(whoami)
+opt_i=$(id -u)
 opt_p=$(whoami)
 opt_d='no'
 
@@ -37,6 +39,7 @@ do
     -h|--help|--version) print_usage_and_exit ;;
     -k*)                 opt_k=${arg#-k}      ;;
     -u*)                 opt_u=${arg#-u}      ;;
+    -i*)                 opt_i=${arg#-i}      ;;
     -p*)                 opt_p=${arg#-p}      ;;
     -d)                  opt_d='yes'          ;;
     *)
@@ -73,6 +76,11 @@ if [ -z "${opt_u}" ]; then
   exit 1
 fi
 
+if ! printf '%s\n' "${opt_i}" | grep -Eq '^[0-9]+$'; then
+  echo "${0##*/}: invalid id <${opt_i}> specified" 1>&2
+  exit 1
+fi
+
 if [ -z "${opt_p}" ]; then
   echo "${0##*/}: password must be specified" 1>&2
   exit 1
@@ -81,6 +89,7 @@ fi
 readonly INVENTORY=${opr}
 readonly KEY_PATH=${opt_k%.pub}
 readonly USER_NAME=${opt_u}
+readonly USER_ID=${opt_i}
 readonly PASSWORD=${opt_p}
 readonly IS_DRYRUN=${opt_d}
 readonly TEMP_NAME=${TMP:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
@@ -103,6 +112,7 @@ cat <<'EOF'                                                         |
   become: yes
   vars:
     user_name: "<<user_name>>"
+    user_id: "<<user_id>>"
     public_key: "<<key_path>>.pub"
     secret_key: "<<key_path>>"
     password: "<<password>>"
@@ -116,6 +126,7 @@ cat <<'EOF'                                                         |
     - name: create user
       ansible.builtin.user:
         name: "{{ user_name }}"
+        uid: "{{ user_id }}"
         password: "{{ password | password_hash('sha512') }}"
         shell: "/bin/bash"
       when: result.rc == 1
@@ -144,6 +155,7 @@ cat <<'EOF'                                                         |
 EOF
 
 sed 's#<<user_name>>#'"${USER_NAME}"'#'                             |
+sed 's#<<user_id>>#'"${USER_ID}"'#'                                 |
 sed 's#<<key_path>>#'"${KEY_PATH}"'#'                               |
 sed 's#<<password>>#'"${PASSWORD}"'#'                               |
 cat >"${PLAYBOOK}"
