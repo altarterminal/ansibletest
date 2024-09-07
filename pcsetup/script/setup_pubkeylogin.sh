@@ -8,14 +8,14 @@ set -eu
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
 Usage   : ${0##*/} <inventory file>
-Options : -k<key path> -u<user name> -i<user id> -p<password> -d
+Options : -k<key path> -u<user name> -i<user id> -p -d
 
 setup public key login. if the user not exist, newly create the user.
 
 -k: specify the key path (default: ${HOME}/.ssh/id_rsa)
 -u: specify the user name (default: $(whoami) = the user name who executes this)
 -i: specify the id for uid and gid if the user is newly created (default: $(id -u) = the uid of who executes this)
--p: specify the password if the user is newly created (default: $(whoami) = the user name who executes this)
+-p: enable password specification if the user is newly created (default: $(whoami) = the user name who executes this)
 -d: enable dry-run (= only output the playbook and not execute it) (default: disabled)
 USAGE
   exit 1
@@ -29,7 +29,7 @@ opr=''
 opt_k=${HOME}/.ssh/id_rsa
 opt_u=$(whoami)
 opt_i=$(id -u)
-opt_p=$(whoami)
+opt_p='no'
 opt_d='no'
 
 i=1
@@ -40,7 +40,7 @@ do
     -k*)                 opt_k=${arg#-k}      ;;
     -u*)                 opt_u=${arg#-u}      ;;
     -i*)                 opt_i=${arg#-i}      ;;
-    -p*)                 opt_p=${arg#-p}      ;;
+    -p)                  opt_p='yes'          ;;
     -d)                  opt_d='yes'          ;;
     *)
       if [ $i -eq $# ] && [ -z "$opr" ]; then
@@ -81,16 +81,11 @@ if ! printf '%s\n' "${opt_i}" | grep -Eq '^[0-9]+$'; then
   exit 1
 fi
 
-if [ -z "${opt_p}" ]; then
-  echo "${0##*/}: password must be specified" 1>&2
-  exit 1
-fi
-
 readonly INVENTORY=${opr}
 readonly KEY_PATH=${opt_k%.pub}
 readonly USER_NAME=${opt_u}
 readonly USER_ID=${opt_i}
-readonly PASSWORD=${opt_p}
+readonly IS_SETPASS=${opt_p}
 readonly IS_DRYRUN=${opt_d}
 readonly TEMP_NAME=${TMP:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
 
@@ -99,7 +94,31 @@ readonly TEMP_NAME=${TMP:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
 #####################################################################
 
 readonly PLAYBOOK=$(mktemp "${TEMP_NAME}")
-trap "[ -e ${PLAYBOOK} ] && rm ${PLAYBOOK}" EXIT
+trap "[ -e ${PLAYBOOK} ] && rm ${PLAYBOOK}; stty echo" EXIT
+
+if [ "${IS_SETPASS}" = 'no' ]; then
+  readonly PASSWORD=$(whoami)
+else
+  stty -echo
+  while true; do
+    printf 'password > '; read -r first_pass; echo ""
+    if [ -z "${first_pass}" ]; then
+      echo "${0##*/}: no-empty password must be specified" 1>&2
+      continue
+    fi
+
+    printf 'retype > '; read -r second_pass; echo "";
+    if [ "${first_pass}" != "${second_pass}" ]; then
+      echo "${0##*/}: password not matched" 1>&2
+      continue
+    fi
+
+    break
+  done
+  stty echo
+
+  readonly PASSWORD=${first_pass}
+fi
 
 #####################################################################
 # main routine
