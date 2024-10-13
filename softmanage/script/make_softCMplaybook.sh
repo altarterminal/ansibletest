@@ -33,7 +33,7 @@ do
       if [ $i -eq $# ] && [ -z "${opr}" ]; then
         opr=$arg
       else
-        echo "${0##*/}: invalid args" 1>&2
+        echo "ERROR:${0##*/}: invalid args" 1>&2
         exit 1
       fi
       ;;

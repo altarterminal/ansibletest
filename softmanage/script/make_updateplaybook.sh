@@ -24,13 +24,13 @@ opr=''
 i=1
 for arg in ${1+"$@"}
 do
-  case "$arg" in
+  case "${arg}" in
     -h|--help|--version) print_usage_and_exit ;;
     *)
-      if [ $i -eq $# ] && [ -z "$opr" ]; then
+      if [ $i -eq $# ] && [ -z "${opr}" ]; then
         opr=$arg
       else
-        echo "${0##*/}: invalid args" 1>&2
+        echo "ERROR:${0##*/}: invalid args" 1>&2
         exit 1
       fi
       ;;
