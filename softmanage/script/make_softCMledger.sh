@@ -25,11 +25,11 @@ opt_s=''
 i=1
 for arg in ${1+"$@"}
 do
-  case "$arg" in
+  case "${arg}" in
     -h|--help|--version) print_usage_and_exit ;;
     -s*)                 opt_s=${arg#-s}      ;;
     *)
-      if [ $i -eq $# ] && [ -z "$opr" ]; then
+      if [ $i -eq $# ] && [ -z "${opr}" ]; then
         opr=$arg
       else
         echo "${0##*/}: invalid args" 1>&2
@@ -42,12 +42,12 @@ do
 done
 
 if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
-  echo "${0##*/}: <${opr}> cannot be accessed" 1>&2
+  echo "ERROR:${0##*/}: <${opr}> cannot be accessed" 1>&2
   exit 1
 fi
 
 if [ ! -f "${opt_s}" ] || [ ! -r "${opt_s}" ]; then
-  echo "${0##*/}: <${opt_s}> cannot be accessed" 1>&2
+  echo "ERROR:${0##*/}: <${opt_s}> cannot be accessed" 1>&2
   exit 1
 fi
 
@@ -61,7 +61,7 @@ readonly SOFT_LEDGER=${opt_s}
 jq -c '.[]' "${SOFT_LEDGER}"                                        |
 while read -r soft; do
   # extract info
-  name=$(echo "${soft}" | jq -r '.name' | xargs printf '%s_complement')
+  name=$(echo "${soft}" | jq -r '.name' | xargs printf '%s_CM')
   cmd=$(echo "${soft}"  | jq -r '.cmd')
   chosts=$(jq -r '.[].name' "${HOST_LEDGER}"                        |
            eval $(echo "${soft}"                                    |

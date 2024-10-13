@@ -28,12 +28,12 @@ opt_d=''
 i=1
 for arg in ${1+"$@"}
 do
-  case "$arg" in
+  case "${arg}" in
     -h|--help|--version) print_usage_and_exit ;;
     -i*)                 opt_i=${arg#-i}      ;; 
     -d*)                 opt_d=${arg#-d}      ;;
     *)
-      if [ $i -eq $# ] && [ -z "$opr" ]; then
+      if [ $i -eq $# ] && [ -z "${opr}" ]; then
         opr=$arg
       else
         echo "${0##*/}: invalid args" 1>&2
@@ -46,29 +46,29 @@ do
 done
 
 if ! type ansible-playbook >/dev/null 2>&1; then
-  echo "${0##*/}: ansible-playbook comannd cannot be found" 1>&2
+  echo "ERROR:${0##*/}: ansible-playbook comannd cannot be found" 1>&2
   exit 1
 fi
 
 if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
-  echo "${0##*/}: <${opr}> cannot be opened" 1>&2
+  echo "ERROR:${0##*/}: <${opr}> cannot be opened" 1>&2
   exit 1
 fi
 
 if [ ! -f "${opt_i}" ] || [ ! -r "${opt_i}" ]; then
-  echo "${0##*/}: <${opt_i}> cannot be opened" 1>&2
+  echo "ERROR:${0##*/}: <${opt_i}> cannot be opened" 1>&2
   exit 1
 fi
 
 if [ -n "${opt_d}" ]; then
   if [ -e "${opt_d}" ] && [ ! -d "${opt_d}" ]; then
-    echo "${0##*/}: <${opt_d}> is not a directory" 1>&2
+    echo "ERROR:${0##*/}: <${opt_d}> is not a directory" 1>&2
     exit 1
   fi
 
   mkdir -p "${opt_d}"
   if [ ! -d "${opt_d}" ] || [ ! -w "${opt_d}" ]; then
-    echo "${0##*/}: <${opt_d}> cannot be opened" 1>&2
+    echo "ERROR:${0##*/}: <${opt_d}> cannot be opened" 1>&2
     exit 1
   fi
 fi
@@ -86,10 +86,12 @@ HOST_NUM=$(ansible-playbook \
            -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}" --list-hosts   |
            grep '^ *hosts ([0-9]*):$'                               |
            sed 's/^ *hosts (\([0-9]*\)):$/\1/'                      )
+
+# if no hosts specified, output warn and exit
 if [ "${HOST_NUM}" = '0' ]; then
   name=$(basename "${PLAYBOOK_FILE}" .yml | sed 's/^playbook_//')
   echo "${name} - -"
-  echo "${0##*/}: no hosts for playbook <${PLAYBOOK_FILE}>" 1>&2
+  echo "WARN:${0##*/}: no hosts for playbook <${PLAYBOOK_FILE}>" 1>&2
   exit 0
 fi
 
