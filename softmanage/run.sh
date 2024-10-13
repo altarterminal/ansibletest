@@ -65,7 +65,7 @@ readonly SCRIPT_DIR="${THIS_DIR}/script"
 readonly INVENTORY="${ANSIBLE_DIR}/inventory.ini"
 readonly SOFTCM_LEDGER="${ANSIBLE_DIR}/softcm_ledger.json"
 
-readonly SOFT_PLAYBOOK_DIR="${ANSIBLE_DIR}/softcm_playbook"
+readonly SOFT_PLAYBOOK_DIR="${ANSIBLE_DIR}/soft_playbook"
 readonly SOFTCM_PLAYBOOK_DIR="${ANSIBLE_DIR}/softcm_playbook"
 readonly UPDATE_PLAYBOOK_DIR="${ANSIBLE_DIR}/update_playbook"
 
@@ -90,49 +90,55 @@ mkdir -p "${UPDATE_PLAYBOOK_DIR}"
 mkdir -p "${UPDATE_RECORD_DIR}"
 mkdir -p "${DEBUG_DIR}"
 
-printf '%s\n' "start: make pre-required files"
+echo "start: make pre-required files"
 ${SCRIPT_DIR}/make_inventory.sh -s"${SOFT_LEDGER}" "${HOST_LEDGER}" >"${INVENTORY}"
 ${SCRIPT_DIR}/make_softCMledger.sh -s"${SOFT_LEDGER}" "${HOST_LEDGER}" >"${SOFTCM_LEDGER}"
-printf '%s\n\n'"end: make pre-required files"
+echo "end: make pre-required files"
 
-printf '%s\n' "start: make playbooks"
+echo "start: make playbooks"
 ${SCRIPT_DIR}/make_softplaybook.sh  -d"${SOFT_PLAYBOOK_DIR}"  "${SOFT_LEDGER}"
 ${SCRIPT_DIR}/make_softCMplaybook.sh -d"${SOFTCM_PLAYBOOK_DIR}" "${SOFTCM_LEDGER}"
 ${SCRIPT_DIR}/make_updateplaybook.sh >"${UPDATE_PLAYBOOK}"
-printf '%s\n\n' "end: make playbooks"
+echo "end: make playbooks"
 
 #####################################################################
 # exec playbook
 #####################################################################
 
 # execute: check software version ###################################
-printf '%s\n' "start: check software version"
+echo "start: check software version"
 find "${SOFT_PLAYBOOK_DIR}" -name "playbook_*.yml"                  |
 sort                                                                |
 while read -r playbook
 do
   name=$(basename "${playbook}" .yml | sed 's/^playbook_//')
   record_file="${SOFT_RECORD_DIR}/${name}_record.yml"
+
+  echo "start: check ${name}"
   result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook}")
   ${SCRIPT_DIR}/record_softresult.sh -l"${SOFT_LEDGER}" -r"${record_file}" "${result}"
+  echo "end: check ${name}"
 done
-printf '%s\n\n' "end: check software version"
+echo "end: check software version"
 
 # execute: check software NOT installed #############################
-printf '%s\n' "start: check software NOT installed"
+echo "start: check software NOT installed"
 find "${SOFTCM_PLAYBOOK_DIR}" -name "playbook_*.yml"                |
 sort                                                                |
 while read -r playbook
 do
   name=$(basename "${playbook}" .yml | sed 's/^playbook_//')
   record_file="${SOFTCM_RECORD_DIR}/${name}_record.yml"
+
+  echo "start: check ${name}"
   result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook}")
   ${SCRIPT_DIR}/record_softCMresult.sh -l"${SOFTCM_LEDGER}" -r"${record_file}" "${result}"
+  echo "end: check ${name}"
 done
-printf '%s\n\n' "end: check software NOT installed"
+echo "end: check software NOT installed"
 
 # execute: apt upgrade ##############################################
-printf '%s\n'"start: apt upgrade"
+echo "start: apt upgrade"
 result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${UPDATE_PLAYBOOK}")
 ${SCRIPT_DIR}/record_updateresult.sh -l"${HOST_LEDGER}" -r"${UPDATE_RECORD_FILE}" "${result}"
-printf '%s\n\n' "end: apt upgrade"
+echo "end: apt upgrade"
