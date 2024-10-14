@@ -116,7 +116,7 @@ do
 
   echo "start: check ${name}"
   result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook}")
-  ${SCRIPT_DIR}/record_softresult.sh -l"${SOFT_LEDGER}" -r"${record_file}" "${result}"
+  ${SCRIPT_DIR}/record_softresult.sh -s"${SOFT_LEDGER}" -r"${record_file}" "${result}"
   echo "end: check ${name}"
 done
 echo "end: check software version"
@@ -132,7 +132,7 @@ do
 
   echo "start: check ${name}"
   result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook}")
-  ${SCRIPT_DIR}/record_softCMresult.sh -l"${SOFTCM_LEDGER}" -r"${record_file}" "${result}"
+  ${SCRIPT_DIR}/record_softCMresult.sh -s"${SOFTCM_LEDGER}" -r"${record_file}" "${result}"
   echo "end: check ${name}"
 done
 echo "end: check software NOT installed"

@@ -7,7 +7,7 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} -l<softCM ledger> -r<record file> <result>
+Usage   : ${0##*/} -s<softCM ledger> -r<record file> <result>
 Options :
 
 update <record file> with info of <softCM ledger> and <result>.
@@ -24,7 +24,7 @@ USAGE
 #####################################################################
 
 opr=''
-opt_l=''
+opt_s=''
 opt_r=''
 
 i=1
@@ -32,7 +32,7 @@ for arg in ${1+"$@"}
 do
   case "${arg}" in
     -h|--help|--version) print_usage_and_exit ;;
-    -l*)                 opt_l=${arg#-l}      ;;
+    -s*)                 opt_s=${arg#-s}      ;;
     -r*)                 opt_r=${arg#-r}      ;;
     *)
       if [ $i -eq $# ] && [ -z "${opr}" ]; then
@@ -47,8 +47,8 @@ do
   i=$((i + 1))
 done
 
-if [ ! -f "${opt_l}" ] || [ ! -r "${opt_l}" ]; then
-  echo "ERROR:${0##*/}: <${opt_l}> cannot be accessed" 1>&2
+if [ ! -f "${opt_s}" ] || [ ! -r "${opt_s}" ]; then
+  echo "ERROR:${0##*/}: <${opt_s}> cannot be accessed" 1>&2
   exit 1
 fi
 
@@ -66,7 +66,7 @@ fi
 #  exit 1
 #fi
 
-readonly LEDGER_FILE=${opt_l}
+readonly LEDGER_FILE=${opt_s}
 readonly RECORD_FILE=${opt_r}
 readonly RESULT_LINE=${opr}
 readonly DATE=$(date '+%Y/%m/%d-%H:%M:%S')
