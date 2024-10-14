@@ -74,7 +74,7 @@ readonly SOFTCM_RECORD_DIR="${ANSIBLE_DIR}/softcm_record"
 readonly UPDATE_RECORD_DIR="${ANSIBLE_DIR}/update_record"
 
 readonly UPDATE_PLAYBOOK="${UPDATE_PLAYBOOK_DIR}/playbook_update.yml"
-readonly UPDATE_RECORD_FILE="${UPDATE_RECORD_DIR}/Update_record.json"
+readonly UPDATE_RECORD_FILE="${UPDATE_RECORD_DIR}/record_update.json"
 
 readonly DEBUG_DIR="${ANSIBLE_DIR}/debug"
 
@@ -98,7 +98,7 @@ echo "end: make pre-required files"
 echo "start: make playbooks"
 ${SCRIPT_DIR}/make_softplaybook.sh  -d"${SOFT_PLAYBOOK_DIR}"  "${SOFT_LEDGER}"
 ${SCRIPT_DIR}/make_softCMplaybook.sh -d"${SOFTCM_PLAYBOOK_DIR}" "${SOFTCM_LEDGER}"
-${SCRIPT_DIR}/make_updateplaybook.sh >"${UPDATE_PLAYBOOK}"
+${SCRIPT_DIR}/make_updateplaybook.sh -d"${UPDATE_PLAYBOOK_DIR}"
 echo "end: make playbooks"
 
 #####################################################################
@@ -112,7 +112,7 @@ sort                                                                |
 while read -r playbook
 do
   name=$(basename "${playbook}" .yml | sed 's/^playbook_//')
-  record_file="${SOFT_RECORD_DIR}/${name}_record.yml"
+  record_file="${SOFT_RECORD_DIR}/record_${name}.yml"
 
   echo "start: check ${name}"
   result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook}")
@@ -128,7 +128,7 @@ sort                                                                |
 while read -r playbook
 do
   name=$(basename "${playbook}" .yml | sed 's/^playbook_//')
-  record_file="${SOFTCM_RECORD_DIR}/${name}_record.yml"
+  record_file="${SOFTCM_RECORD_DIR}/record_${name}.yml"
 
   echo "start: check ${name}"
   result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook}")
