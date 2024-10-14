@@ -73,9 +73,6 @@ readonly SOFT_RECORD_DIR="${ANSIBLE_DIR}/soft_record"
 readonly SOFTCM_RECORD_DIR="${ANSIBLE_DIR}/softcm_record"
 readonly UPDATE_RECORD_DIR="${ANSIBLE_DIR}/update_record"
 
-readonly UPDATE_PLAYBOOK_FILE="${UPDATE_PLAYBOOK_DIR}/playbook_update.yml"
-readonly UPDATE_RECORD_FILE="${UPDATE_RECORD_DIR}/record_update.json"
-
 readonly DEBUG_DIR="${ANSIBLE_DIR}/debug"
 
 #####################################################################
@@ -96,7 +93,7 @@ ${SCRIPT_DIR}/make_softCMledger.sh -s"${SOFT_LEDGER}" "${HOST_LEDGER}" >"${SOFTC
 echo "end: make pre-required files"
 
 echo "start: make playbooks"
-${SCRIPT_DIR}/make_softplaybook.sh  -d"${SOFT_PLAYBOOK_DIR}"  "${SOFT_LEDGER}"
+${SCRIPT_DIR}/make_softplaybook.sh -d"${SOFT_PLAYBOOK_DIR}" "${SOFT_LEDGER}"
 ${SCRIPT_DIR}/make_softCMplaybook.sh -d"${SOFTCM_PLAYBOOK_DIR}" "${SOFTCM_LEDGER}"
 ${SCRIPT_DIR}/make_updateplaybook.sh -d"${UPDATE_PLAYBOOK_DIR}"
 echo "end: make playbooks"
@@ -106,6 +103,7 @@ echo "end: make playbooks"
 #####################################################################
 
 # execute: check software version ###################################
+
 echo "start: check software version"
 jq -cr '.[].name' "${SOFT_LEDGER}"                                  |
 sort                                                                |
@@ -122,6 +120,7 @@ done
 echo "end: check software version"
 
 # execute: check software NOT installed #############################
+
 echo "start: check software NOT installed"
 jq -cr '.[].name' "${SOFTCM_LEDGER}"                                |
 sort                                                                |
@@ -138,7 +137,11 @@ done
 echo "end: check software NOT installed"
 
 # execute: apt upgrade ##############################################
+
+playbook_file="${UPDATE_PLAYBOOK_DIR}/playbook_update.yml"
+record_file="${UPDATE_RECORD_DIR}/record_update.json"
+
 echo "start: apt upgrade"
-result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${UPDATE_PLAYBOOK_FILE}")
-${SCRIPT_DIR}/record_updateresult.sh -l"${HOST_LEDGER}" -r"${UPDATE_RECORD_FILE}" "${result}"
+result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook_file}")
+${SCRIPT_DIR}/record_updateresult.sh -l"${HOST_LEDGER}" -r"${record_file}" "${result}"
 echo "end: apt upgrade"
