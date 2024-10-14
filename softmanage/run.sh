@@ -115,7 +115,7 @@ do
   record_file="${SOFT_RECORD_DIR}/record_${name}.yml"
 
   echo "start: check ${name}"
-  result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook}")
+  result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook_file}")
   ${SCRIPT_DIR}/record_softresult.sh -s"${SOFT_LEDGER}" -r"${record_file}" "${result}"
   echo "end: check ${name}"
 done
@@ -131,7 +131,7 @@ do
   record_file="${SOFTCM_RECORD_DIR}/record_${name}.yml"
 
   echo "start: check ${name}"
-  result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook}")
+  result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook_file}")
   ${SCRIPT_DIR}/record_softCMresult.sh -s"${SOFTCM_LEDGER}" -r"${record_file}" "${result}"
   echo "end: check ${name}"
 done
