@@ -110,7 +110,7 @@ sort                                                                |
 while read -r name
 do
   playbook_file="${SOFT_PLAYBOOK_DIR}/playbook_${name}.yml"
-  record_file="${SOFT_RECORD_DIR}/record_${name}.yml"
+  record_file="${SOFT_RECORD_DIR}/record_${name}.json"
 
   echo "start: check ${name}"
   result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook_file}")
@@ -127,7 +127,7 @@ sort                                                                |
 while read -r name
 do
   playbook_file="${SOFTCM_PLAYBOOK_DIR}/playbook_${name}.yml"
-  record_file="${SOFTCM_RECORD_DIR}/record_${name}.yml"
+  record_file="${SOFTCM_RECORD_DIR}/record_${name}.json"
 
   echo "start: check ${name}"
   result=$(${SCRIPT_DIR}/exec_playbook.sh -i"${INVENTORY}" -d"${DEBUG_DIR}" "${playbook_file}")
