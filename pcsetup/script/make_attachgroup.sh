@@ -39,7 +39,7 @@ do
       if [ $i -eq $# ] && [ -z "${opr}" ]; then
         opr=${arg}
       else
-        echo "${0##*/}: invalid args" 1>&2
+        echo "ERROR:${0##*/}: invalid args" 1>&2
         exit 1
       fi
       ;;
@@ -49,22 +49,22 @@ do
 done
 
 if ! type ansible-playbook >/dev/null 2>&1; then
-  echo "${0##*/}: ansible command not found" 1>&2
+  echo "ERROR:${0##*/}: ansible command not found" 1>&2
   exit 1
 fi
 
 if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
-  echo "${0##*/}: invalid ledger specified <${opr}>" 1>&2
+  echo "ERROR:${0##*/}: invalid ledger specified <${opr}>" 1>&2
   exit 1
 fi
 
 if [ ! -f "${opt_i}" ] || [ ! -r "${opt_i}" ]; then
-  echo "${0##*/}: invalid inventory specified <${opt_i}>" 1>&2
+  echo "ERROR:${0##*/}: invalid inventory specified <${opt_i}>" 1>&2
   exit 1
 fi
 
 if [ ! -f "${opt_t}" ] || [ ! -r "${opt_t}" ]; then
-  echo "${0##*/}: invalid ledger specified <${opt_t}>" 1>&2
+  echo "ERROR:${0##*/}: invalid ledger specified <${opt_t}>" 1>&2
   exit 1
 fi
 
@@ -104,13 +104,13 @@ trap "
 EOF
   cat
 
-  cat "${TYPE_LEDGER_FILE}"                                       |
-  jq -r '.[].group.[]'                                            |
-  sort                                                            |
-  uniq                                                            |
+  cat "${TYPE_LEDGER_FILE}"                                         |
+  jq -r '.[].group.[]'                                              |
+  sort                                                              |
+  uniq                                                              |
   xargs -I@ echo "      - @"
 
-cat <<'EOF'                                                       |
+cat <<'EOF'                                                         |
   - name: attach group if
     include_tasks: <<playbook_body_file>>
     with_items:
@@ -146,7 +146,7 @@ cat >"${PLAYBOOK_BODY_FILE}"
 
 if [ "${IS_DRYRUN}" = 'yes' ]; then
   cat "${PLAYBOOK_IF_FILE}"
-  echo "====="
+  echo '====='
   cat "${PLAYBOOK_BODY_FILE}"
 else
   ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_IF_FILE}"

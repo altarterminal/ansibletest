@@ -11,7 +11,6 @@ Usage   : ${0##*/} -i<inventory> <group ledger>
 Options : -d
 
 Create groups on <group ledger> to hosts on <inventory>.
-If there has already been the group, nothing is done.
 
 -d: enable dry run (default: no)
 USAGE
@@ -37,7 +36,7 @@ do
       if [ $i -eq $# ] && [ -z "${opr}" ]; then
         opr=${arg}
       else
-        echo "${0##*/}: invalid args" 1>&2
+        echo "ERROR:${0##*/}: invalid args" 1>&2
         exit 1
       fi
       ;;
@@ -47,17 +46,17 @@ do
 done
 
 if ! type ansible-playbook >/dev/null 2>&1; then
-  echo "${0##*/}: ansible command not found" 1>&2
+  echo "ERROR:${0##*/}: ansible command not found" 1>&2
   exit 1
 fi
 
 if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
-  echo "${0##*/}: invalid ledger specified <${opr}>" 1>&2
+  echo "ERROR:${0##*/}: invalid ledger specified <${opr}>" 1>&2
   exit 1
 fi
 
 if [ ! -f "${opt_i}" ] || [ ! -r "${opt_i}" ]; then
-  echo "${0##*/}: invalid inventory specified <${opt_i}>" 1>&2
+  echo "ERROR:${0##*/}: invalid inventory specified <${opt_i}>" 1>&2
   exit 1
 fi
 
@@ -102,7 +101,7 @@ EOF
     group_name=$(echo "${line}" | jq -r '.name')
     group_id=$(echo "${line}" | jq -r '.gid')
 
-    printf '      - { "group_name":"%s", "group_id":"%s" }\n' \
+    printf '      - { "group_name":"%s", "group_id":"%s" }\n'       \
       "${group_name}" "${group_id}"
   done
 } >"${PLAYBOOK_IF_FILE}"
@@ -117,6 +116,7 @@ cat >"${PLAYBOOK_BODY_FILE}"
 
 if [ "${IS_DRYRUN}" = 'yes' ]; then
   cat "${PLAYBOOK_IF_FILE}"
+  echo '====='
   cat "${PLAYBOOK_BODY_FILE}"
 else
   ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_IF_FILE}"
