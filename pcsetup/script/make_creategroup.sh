@@ -7,11 +7,11 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} -i<inventory> <accout ledger>
+Usage   : ${0##*/} -i<inventory> <group ledger>
 Options : -d
 
-Create accouts on <accout ledger> to hosts on <inventory>.
-If there has already been the account, nothing is done.
+Create groups on <group ledger> to hosts on <inventory>.
+If there has already been the group, nothing is done.
 
 -d: enable dry run (default: no)
 USAGE
@@ -84,13 +84,13 @@ trap "
 
 {
   cat <<'EOF'                                                       |
-- name: create account
+- name: create group
   hosts: all
   gather_facts: no
   become: yes
   vars:
   tasks:
-  - name: create account if
+  - name: create group if
     include_tasks: <<playbook_body_file>>
     with_items:
 EOF
@@ -99,28 +99,19 @@ EOF
   jq -c '.[]' "${LEDGER_FILE}"                                      |
   while read -r line;
   do
-    user_name=$(echo "${line}" | jq -r '.name')
-    user_id=$(echo "${line}" | jq -r '.uid')
+    group_name=$(echo "${line}" | jq -r '.name')
+    group_id=$(echo "${line}" | jq -r '.gid')
 
-    printf '      - { "user_name":"%s", "user_id":"%s" }\n' \
-      "${user_name}" "${user_id}"
+    printf '      - { "group_name":"%s", "group_id":"%s" }\n' \
+      "${group_name}" "${group_id}"
   done
 } >"${PLAYBOOK_IF_FILE}"
 
 cat <<'EOF'                                                         |
-- name: check the account exist
-  ansible.builtin.shell: |
-    id "{{ item.user_name }}"
-  register: result
-  failed_when: result.rc not in [0, 1]
-
-- name: create account
-  ansible.builtin.user:
-    name: "{{ item.user_name }}"
-    uid: "{{ item.user_id }}"
-    password: "{{ item.user_name | password_hash('sha512') }}"
-    shell: "/bin/bash"
-  when: result.rc == 1
+- name: create group body
+  ansible.builtin.group:
+    name: "{{ item.group_name }}"
+    gid: "{{ item.group_id }}"
 EOF
 cat >"${PLAYBOOK_BODY_FILE}"
 
