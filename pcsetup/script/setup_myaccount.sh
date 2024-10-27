@@ -87,7 +87,7 @@ readonly USER_NAME=${opt_u}
 readonly USER_ID=${opt_i}
 readonly IS_SETPASS=${opt_p}
 readonly IS_DRYRUN=${opt_d}
-readonly TEMP_NAME=${TMP:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
+readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
 
 #####################################################################
 # prepare
