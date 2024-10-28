@@ -48,18 +48,24 @@ do
   i=$((i + 1))
 done
 
-if ! type ansible-playbook >/dev/null 2>&1; then
-  echo "ERROR:${0##*/}: ansible command not found" 1>&2
-  exit 1
+readonly IS_DRYRUN=${opt_d}
+
+if [ "${IS_DRYRUN}" ]; then
+  if ! type ansible-playbook >/dev/null 2>&1; then
+    echo "ERROR:${0##*/}: ansible command not found" 1>&2
+    exit 1
+  fi
+
+  if [ ! -f "${opt_i}" ] || [ ! -r "${opt_i}" ]; then
+    echo "ERROR:${0##*/}: invalid inventory specified <${opt_i}>" 1>&2
+    exit 1
+  fi
+
+  readonly INVENTORY_FILE=${opt_i}
 fi
 
 if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
   echo "ERROR:${0##*/}: invalid ledger specified <${opr}>" 1>&2
-  exit 1
-fi
-
-if [ ! -f "${opt_i}" ] || [ ! -r "${opt_i}" ]; then
-  echo "ERROR:${0##*/}: invalid inventory specified <${opt_i}>" 1>&2
   exit 1
 fi
 
@@ -69,18 +75,17 @@ if [ ! -f "${opt_t}" ] || [ ! -r "${opt_t}" ]; then
 fi
 
 readonly ACCOUNT_LEDGER_FILE=${opr}
-readonly INVENTORY_FILE=${opt_i}
 readonly TYPE_LEDGER_FILE=${opt_t}
-readonly IS_DRYRUN=${opt_d}
+readonly DATE=$(date '+%Y%m%d_%H%M%S')
 
-readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
+readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_XXXXXX
 
 #####################################################################
 # prepare
 #####################################################################
 
-readonly PLAYBOOK_IF_FILE=$(mktemp "${TEMP_NAME}_IF")
-readonly PLAYBOOK_BODY_FILE=$(mktemp "${TEMP_NAME}_BODY")
+readonly PLAYBOOK_IF_FILE=$(mktemp "${TEMP_NAME}_IF.yml")
+readonly PLAYBOOK_BODY_FILE=$(mktemp "${TEMP_NAME}_BODY.yml")
 trap "
   [ -e ${PLAYBOOK_IF_FILE} ] && rm ${PLAYBOOK_IF_FILE}
   [ -e ${PLAYBOOK_BODY_FILE} ] && rm ${PLAYBOOK_BODY_FILE}
@@ -145,8 +150,10 @@ EOF
 cat >"${PLAYBOOK_BODY_FILE}"
 
 if [ "${IS_DRYRUN}" = 'yes' ]; then
+  echo '=== IF ====================================================='
   cat "${PLAYBOOK_IF_FILE}"
-  echo '====='
+  echo ''
+  echo '=== BODY ==================================================='
   cat "${PLAYBOOK_BODY_FILE}"
 else
   ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_IF_FILE}"
