@@ -76,7 +76,7 @@ readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_XXXXXX
 # prepare
 #####################################################################
 
-readonly PLAYBOOK_FILE=$(mktemp "${TEMP_NAME}.yml")
+readonly PLAYBOOK_FILE=$(mktemp "${TEMP_NAME}")
 trap "
   [ -e ${PLAYBOOK_FILE} ] && rm ${PLAYBOOK_FILE}
 " EXIT
@@ -115,5 +115,5 @@ EOF
 if [ "${IS_DRYRUN}" = 'yes' ]; then
   cat "${PLAYBOOK_FILE}"
 else
-  ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_IF_FILE}"
+  ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}"
 fi

@@ -69,14 +69,15 @@ fi
 readonly LEDGER_FILE=${opr}
 readonly DATE=$(date '+%Y%m%d_%H%M%S')
 
-readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_XXXXXX
+readonly TEMP_IF_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_if_XXXXXX
+readonly TEMP_BODY_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_body_XXXXXX
 
 #####################################################################
 # prepare
 #####################################################################
 
-readonly PLAYBOOK_IF_FILE=$(mktemp "${TEMP_NAME}_IF.yml")
-readonly PLAYBOOK_BODY_FILE=$(mktemp "${TEMP_NAME}_BODY.yml")
+readonly PLAYBOOK_IF_FILE=$(mktemp "${TEMP_IF_NAME}")
+readonly PLAYBOOK_BODY_FILE=$(mktemp "${TEMP_BODY_NAME}")
 trap "
   [ -e ${PLAYBOOK_IF_FILE} ] && rm ${PLAYBOOK_IF_FILE}
   [ -e ${PLAYBOOK_BODY_FILE} ] && rm ${PLAYBOOK_BODY_FILE}
