@@ -1,7 +1,0 @@
----
-- hosts: localserver
-  become: yes
-  become_user: root
-  roles:
-    - apt
-    - sys
