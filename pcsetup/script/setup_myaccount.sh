@@ -55,14 +55,20 @@ do
   i=$((i + 1))
 done
 
-if ! type ansible-playbook >/dev/null 2>&1; then
-  echo "ERROR:${0##*/}: ansible command not found" 1>&2
-  exit 1
-fi
+readonly IS_DRYRUN=${opt_d}
 
-if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
-  echo "ERROR:${0##*/}: invalid inventory specified <${opr}>" 1>&2
-  exit 1
+if [ "${IS_DRYRUN}" = 'no' ]; then
+  if ! type ansible-playbook >/dev/null 2>&1; then
+    echo "ERROR:${0##*/}: ansible command not found" 1>&2
+    exit 1
+  fi
+
+  if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
+    echo "ERROR:${0##*/}: invalid inventory specified <${opr}>" 1>&2
+    exit 1
+  fi
+
+  readonly INVENTORY=${opr}
 fi
 
 if [ ! -f "${opt_k%.pub}" ]     || [ ! -r "${opt_k%.pub}" ] ||
@@ -81,12 +87,10 @@ if ! printf '%s\n' "${opt_i}" | grep -Eq '^[0-9]+$'; then
   exit 1
 fi
 
-readonly INVENTORY=${opr}
 readonly KEY_PATH=${opt_k%.pub}
 readonly USER_NAME=${opt_u}
 readonly USER_ID=${opt_i}
 readonly IS_SETPASS=${opt_p}
-readonly IS_DRYRUN=${opt_d}
 readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
 
 #####################################################################
@@ -96,7 +100,7 @@ readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
 readonly PLAYBOOK=$(mktemp "${TEMP_NAME}")
 trap "[ -e ${PLAYBOOK} ] && rm ${PLAYBOOK}; stty echo" EXIT
 
-if [ "${IS_SETPASS}" = 'no' ]; then
+if [ "${IS_DRYRUN}" = 'yes' ] || [ "${IS_SETPASS}" = 'no' ]; then
   readonly PASSWORD=$(whoami)
 else
   stty -echo
