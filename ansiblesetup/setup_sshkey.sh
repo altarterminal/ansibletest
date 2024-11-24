@@ -23,13 +23,16 @@ USAGE
 #####################################################################
 
 opr=''
+opt_o='./ansible_ssh_key'
 opt_f='no'
 
 i=1
 for arg in ${1+"$@"}
 do
   case "${arg}" in
+    A
     -h|--help|--version) print_usage_and_exit ;;
+    -o*)                 opt_o=${arg#-o}      ;;
     -f)                  opt_f='yes'          ;;
     *)
       if [ $i -eq $# ] && [ -z "${opr}" ]; then
@@ -44,11 +47,12 @@ do
   i=$((i + 1))
 done
 
-if [ -z "${opr}" ]; then
-  opr='./ansible_ssh_key'
+if [ -z "${opt_o}" ]; then
+  echo "ERROR:${0##*/}: output path must be specified" 1>&2
+  exit 1
 fi
 
-readonly KEY_FILE=${opr}
+readonly KEY_FILE=${opt_o}
 readonly IS_FORCE=${opt_f}
 
 #####################################################################

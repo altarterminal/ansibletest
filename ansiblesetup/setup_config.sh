@@ -23,6 +23,7 @@ USAGE
 #####################################################################
 
 opr=''
+opt_o='./ansible.cfg'
 opt_f='no'
 
 i=1
@@ -30,6 +31,7 @@ for arg in ${1+"$@"}
 do
   case "${arg}" in
     -h|--help|--version) print_usage_and_exit ;;
+    -o*)                 opt_o=${arg#-o}      ;;
     -f)                  opt_f='yes'          ;;
     *)
       if [ $i -eq $# ] && [ -z "${opr}" ]; then
@@ -44,11 +46,12 @@ do
   i=$((i + 1))
 done
 
-if [ -z "${opr}" ]; then
-  opr='./ansible.cfg'
+if [ -z "${opt_o}" ]; then
+  echo "ERROR:${0##*/}: output path must be specified" 1>&2
+  exit 1
 fi
 
-readonly CONFIG_FILE=${opr}
+readonly CONFIG_FILE=${opt_o}
 readonly IS_FORCE=${opt_f}
 
 #####################################################################
