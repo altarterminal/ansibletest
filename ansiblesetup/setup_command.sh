@@ -11,8 +11,7 @@ Usage   : ${0##*/} <venv path>
 Options : -f
 
 Setup python's venv on <venv path>.
-If the baremetal environment of the virtual environment <env path>
-include the ansible, nothing will be done.
+If the baremetal environment or the virtual environment <env path> include the ansible, nothing will be done.
 Otherwise, ansible will be installed on <venv path>.
 
 -f: enable force install (delete the existing directory).
@@ -46,11 +45,6 @@ do
   i=$((i + 1))
 done
 
-if type ansible >/dev/null 2>&1; then
-  echo "INFO:${0##*/}: ansible has already been installed" 1>&2
-  exit 0
-fi
-
 if ! type python3 >/dev/null 2>&1; then
   echo "ERROR:${0##*/}: python3 not installed" 1>&2
   exit 1
@@ -70,13 +64,19 @@ readonly ACTIVATE_PATH="${ENV_PATH}/bin/activate"
 # prepare
 #####################################################################
 
+# check the baremetal ansible
+if type ansible >/dev/null 2>&1; then
+  echo "INFO:${0##*/}: ansible has already been installed" 1>&2
+  exit 0
+fi
+
 # delete the old environment if it is forced
 if [ "${IS_FORCE}" = 'yes' ] && [ -d "${ENV_PATH}" ]; then
   rm -r "${ENV_PATH}"
   echo "INFO:${0##*/}: deleted the old environment <${ENV_PATH}>" 1>&2
 fi
 
-# check if the existing environment works for ansible
+# check if the existing virtual environment includes ansible
 if [ -f "${ACTIVATE_PATH}" ] && [ -r "${ACTIVATE_PATH}" ]; then
   . "${ACTIVATE_PATH}"
 
