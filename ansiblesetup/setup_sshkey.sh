@@ -30,7 +30,6 @@ i=1
 for arg in ${1+"$@"}
 do
   case "${arg}" in
-    A
     -h|--help|--version) print_usage_and_exit ;;
     -o*)                 opt_o=${arg#-o}      ;;
     -f)                  opt_f='yes'          ;;
