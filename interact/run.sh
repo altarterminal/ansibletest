@@ -94,7 +94,7 @@ do
   case "${cmd}" in
     h) print_menu ;;
     r) "${TOP_DIR}/remove_unreachhosts.sh" "${INVENTORY_FILE}" ;;
-    c) "${TOP_DIR}/exec_command.sh" "${INVENTORY_FILE}" ;;
+    c) "${TOP_DIR}/exec_command_if.sh" "${INVENTORY_FILE}" ;;
     q) exit 0 ;;
     *) ;;
   esac

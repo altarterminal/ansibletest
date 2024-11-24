@@ -119,14 +119,14 @@ do
   if    [ "${result}" = 'OK' ]; then
     printf '%s\n' "${line}" | jq '.state.stdout' | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>stdout<T>!'
     printf '%s\n' "${line}" | jq '.state.stderr' | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>stderr<T>!'
-    printf '%s\n' "${line}" | jq '.state.rc'     | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>returncode<T>!'
+    printf '%s\n' "${line}" | jq '.state.rc'     | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>rtcode<T>!'
    elif [ "${result}" = 'FAILED' ]; then
     printf '%s\n' "${line}" | jq '.state.stdout' | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>stdout<T>!'
     printf '%s\n' "${line}" | jq '.state.stderr' | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>stderr<T>!'
-    printf '%s\n' "${line}" | jq '.state.rc'     | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>returncode<T>!'
+    printf '%s\n' "${line}" | jq '.state.rc'     | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>rtcode<T>!'
   elif  [ "${result}" = 'UNREACHABLE' ]; then
     printf '%s\n' '""'                           | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>stdout<T>!'
     printf '%s\n' "${line}" | jq '.state.msg'    | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>stderr<T>!'
-    printf '%s\n' '255'                          | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>returncode<T>!'
+    printf '%s\n' '255'                          | perl -pe 's/\\n/\n/g' | sed 's!^!'"${hostname}"'<M>rtcode<T>!'
   fi
 done

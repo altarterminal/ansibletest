@@ -10,7 +10,7 @@ print_usage_and_exit () {
 Usage   : ${0##*/} <inventory file>
 Options :
 
-execute command on hosts on <inventory file>
+Execute command on hosts on <inventory file>
 USAGE
   exit 1
 }
@@ -46,6 +46,8 @@ fi
 
 readonly INVENTORY_FILE=${opr}
 
+readonly THIS_DIR=${0%/*}
+
 #####################################################################
 # main routine
 #####################################################################
@@ -57,6 +59,6 @@ do
 
   case "${cmd}" in
     q) exit 0 ;;
-    *) exec_command -i"${INVENTORY_FILE}" "${cmd}" ;;
+    *) "${THIS_DIR}/exec_command_body.sh" -i"${INVENTORY_FILE}" "${cmd}" ;;
   esac
 done
