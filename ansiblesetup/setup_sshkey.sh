@@ -12,7 +12,7 @@ Options : -o<output path> -f
 
 Prepare a ssh secret key to <output path>
 
--o: specify the output file path (default: ./ansible_ssh_key)
+-o: specify the output file path (default: ./ansible_sshkey)
 -f: enable the overwrite when the file has already exist
 USAGE
   exit 1
@@ -23,7 +23,7 @@ USAGE
 #####################################################################
 
 opr=''
-opt_o='./ansible_ssh_key'
+opt_o='./ansible_sshkey'
 opt_f='no'
 
 i=1
