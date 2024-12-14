@@ -10,7 +10,7 @@ print_usage_and_exit () {
 Usage   : ${0##*/} <inventory file>
 Options : -u<user name> -i<user id> -d
 
-setup public key login. if the user not exist, newly create the user.
+Change the user id and group id.
 
 -u: specify the user name (default: $(whoami) = the user name who executes this)
 -i: specify the id for uid and gid if the user is newly created (default: $(id -u) = the uid of who executes this)
