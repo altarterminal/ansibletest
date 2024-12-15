@@ -89,38 +89,34 @@ cat <<'EOF'                                                         |
   become: yes
   vars:
     user_name: "<<user_name>>"
-    tool_dir: "/home/<<user_name>>/Tools"
-    download_dir: "/home/<<user_name>>/Tools/download"
-    install_dir: "/home/<<user_name>>/Tools/install"
-    bash_file: "/home/<<user_name>>/.bashrc"
   tasks:
     - name: check the user exist
       ansible.builtin.shell: |
         id "{{ user_name }}"
 
-    - name: create tool directory
-      ansible.builtin.file:
-        path: "{{ tool_dir }}"
-        state: "directory"
-        owner: "{{ user_name }}"
-        group: "{{ user_name }}"
-        mode: "755"
+    - name: get home directory
+      ansible.builtin.shell: "echo ${HOME}"
+      register: result
+      become_user: "{{ user_name }}"
 
-    - name: create download directory
-      ansible.builtin.file:
-        path: "{{ download_dir }}"
-        state: "directory"
-        owner: "{{ user_name }}"
-        group: "{{ user_name }}"
-        mode: "755"
+    - name: set home directory parameter
+      ansible.builtin.set_fact:
+        home_dir: "{{ result.stdout }}"
 
-    - name: create install directory
+    - name: set parameters
+      ansible.builtin.set_fact:
+        download_dir: "{{ home_dir }}/Tools/download"
+        install_dir: "{{ home_dir }}/Tools/install"
+        bash_file: "{{ home_dir }}/.bashrc"
+
+    - name: create directories
       ansible.builtin.file:
-        path: "{{ install_dir }}"
+        path: "{{ item }}"
         state: "directory"
-        owner: "{{ user_name }}"
-        group: "{{ user_name }}"
-        mode: "755"
+      loop:
+        - "{{ download_dir }}"
+        - "{{ install_dir }}"
+      become_user: "{{ user_name }}"
 
     - name: remove the old shellshoccar if exists
       ansible.builtin.file:
@@ -131,12 +127,14 @@ cat <<'EOF'                                                         |
       ansible.builtin.git:
         repo: "https://github.com/ShellShoccar-jpn/installer.git"
         dest: "{{ download_dir }}/shellshoccar"
+      become_user: "{{ user_name }}"
 
     - name: install shellshoccar
       ansible.builtin.shell: |
         cd {{ download_dir }}/shellshoccar
         chmod +x ./shellshoccar.sh
         ./shellshoccar.sh --prefix={{ install_dir }}/shellshoccar install
+      become_user: "{{ user_name }}"
 
     - name: register the path of shellshoccar
       ansible.builtin.blockinfile:
@@ -144,6 +142,7 @@ cat <<'EOF'                                                         |
         block: |
           export PATH="{{ install_dir }}/shellshoccar/bin:${PATH}" 
         marker: "# {mark} ANSIBLE MANAGED BLOCK for TOOLS"
+      become_user: "{{ user_name }}"
 EOF
 
 sed 's#<<user_name>>#'"${USER_NAME}"'#'                             |
@@ -152,5 +151,5 @@ cat >"${PLAYBOOK}"
 if [ "${IS_DRYRUN}" = 'yes' ]; then
   cat "${PLAYBOOK}"
 else
-  ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}"
+  ANSIBLE_PIPELINING=1 ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}"
 fi
