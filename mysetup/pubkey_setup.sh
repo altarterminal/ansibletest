@@ -105,9 +105,18 @@ cat <<'EOF'                                                         |
       ansible.builtin.shell: |
         id "{{ user_name }}"
 
+    - name: get home directory
+      ansible.builtin.shell: "echo ${HOME}"
+      register: result
+      become_user: "{{ user_name }}"
+
+    - name: set home directory parameter
+      ansible.builtin.set_fact:
+        home_dir: "{{ result.stdout }}"
+
     - name: create ssh directory
       ansible.builtin.file:
-        path: "/home/{{ user_name }}/.ssh"
+        path: "{{ home_dir }}/.ssh"
         state: "directory"
         owner: "{{ user_name }}"
         group: "{{ user_name }}"
@@ -117,7 +126,7 @@ cat <<'EOF'                                                         |
       ansible.builtin.copy:
         remote_src: false
         src: "{{ secret_key }}"
-        dest: "/home/{{ user_name }}/.ssh/{{ secret_key | basename }}"
+        dest: "{{ home_dir }}/.ssh/{{ secret_key | basename }}"
         owner: "{{ user_name }}"
         group: "{{ user_name }}"
         mode: "600"
@@ -135,5 +144,5 @@ cat >"${PLAYBOOK}"
 if [ "${IS_DRYRUN}" = 'yes' ]; then
   cat "${PLAYBOOK}"
 else
-  ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}"
+  ANSIBLE_PIPELINING=1 ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}"
 fi
