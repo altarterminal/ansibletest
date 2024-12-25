@@ -77,7 +77,7 @@ if [ -z "${opt_u}" ]; then
 fi
 
 readonly USER_NAME=${opt_u}
-readonly KEY_PATH=${opt_k%.pub}
+readonly KEY_PATH=$(realpath ${opt_k%.pub})
 readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
 
 #####################################################################
