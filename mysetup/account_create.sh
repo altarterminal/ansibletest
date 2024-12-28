@@ -8,13 +8,14 @@ set -eu
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
 Usage   : ${0##*/} <inventory file>
-Options : -u<user name> -i<user id> -d
+Options : -u<user name> -i<user id> -j<json> -d
 
 Create account.
 
--u: specify the user name (default: <$(whoami)> = the user name who executes this)
--i: specify the user id for uid and gid (default: <$(id -u)> = the id who executes this)
--d: enable dry-run (= only output the playbook and not execute it) (default: disabled)
+-u: Specify the user name (default: <$(whoami)> = the user name who executes this)
+-i: Specify the user id for uid and gid (default: <$(id -u)> = the id who executes this)
+-j: Specify the json on which the an array of user name and id is defined. This is prioritized to -u and -i options.
+-d: Enable dry-run (= only output the playbook and not execute it) (default: disabled)
 USAGE
   exit 1
 }
@@ -26,6 +27,7 @@ USAGE
 opr=''
 opt_u=$(whoami)
 opt_i=$(id -u)
+opt_j=''
 opt_d='no'
 
 i=1
@@ -35,6 +37,7 @@ do
     -h|--help|--version) print_usage_and_exit ;;
     -u*)                 opt_u=${arg#-u}      ;;
     -i*)                 opt_i=${arg#-i}      ;;
+    -j*)                 opt_j=${arg#-j}      ;;
     -d)                  opt_d='yes'          ;;
     *)
       if [ $i -eq $# ] && [ -z "${opr}" ]; then
@@ -65,61 +68,121 @@ if [ "${IS_DRYRUN}" = 'no' ]; then
   readonly INVENTORY=${opr}
 fi
 
-if [ -z "${opt_u}" ]; then
-  echo "ERROR:${0##*/}: user name must be specified" 1>&2
-  exit 1
+if [ -n "${opt_j}" ]; then
+  if [ ! -f "${opt_j}" ] || [ ! -r "${opt_j}" ]; then
+    echo "ERROR:${0##*/}: invalid file spedified" 1>&2
+    exit 1
+  fi
+
+  readonly IS_JSON='yes'
+  readonly JSON_FILE="${opt_j}"
+else
+  readonly IS_JSON='no'
+  readonly USER_NAME=${opt_u}
+  readonly USER_ID=${opt_i}
 fi
 
-if ! echo "${opt_i}" | grep -Eq '^[0-9]+$' ; then
-  echo "ERROR:${0##*/}:  invalid id specified <${opt_i}>" 1>&2
-  exit 1
-fi
+readonly DATE=$(date '+%Y%m%d_%H%M%S')
 
-readonly USER_NAME=${opt_u}
-readonly USER_ID=${opt_i}
-readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
+readonly TEMP_IF_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_if_XXXXXX
+readonly TEMP_BODY_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_body_XXXXXX
+readonly TEMP_JSON_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_json_XXXXXX
 
 #####################################################################
 # prepare
 #####################################################################
 
-readonly PLAYBOOK=$(mktemp "${TEMP_NAME}")
-trap "[ -e ${PLAYBOOK} ] && rm ${PLAYBOOK}" EXIT
+readonly PLAYBOOK_IF_FILE=$(mktemp "${TEMP_IF_NAME}")
+readonly PLAYBOOK_BODY_FILE=$(mktemp "${TEMP_BODY_NAME}")
+readonly JSON_MIDDLE_FILE=$(mktemp "${TEMP_JSON_NAME}")
+
+trap "
+  [ -e ${PLAYBOOK_IF_FILE} ]   && rm ${PLAYBOOK_IF_FILE}
+  [ -e ${PLAYBOOK_BODY_FILE} ] && rm ${PLAYBOOK_BODY_FILE}
+  [ -e ${JSON_MIDDLE_FILE} ]   && rm ${JSON_MIDDLE_FILE}
+" EXIT
+
+if [ "${IS_JSON}" = 'yes' ]; then
+  cat "${JSON_FILE}" >"${JSON_MIDDLE_FILE}"
+else
+  printf '[{"name":"%s","uid":"%s"}]\n' "${USER_NAME}" "${USER_ID}" |
+  cat >"${JSON_MIDDLE_FILE}"
+fi
+
+#####################################################################
+# check
+#####################################################################
+
+cat "${JSON_MIDDLE_FILE}"                                           |
+jq -cr '.[]'                                                        |
+while read -r line;
+do
+  name=$(echo "${line}" | jq -r '.name // empty')
+  uid=$(echo "${line}" | jq -r '.uid // empty')
+
+  if [ -z "${name}" ]; then
+    echo "ERROR:${0##*/}: user name must be specified" 1>&2
+    echo 'error'
+  fi
+
+  if ! echo "${uid}" | grep -Eq '^[0-9]+$'; then
+    echo "ERROR:${0##*/}: invalid uid specified <${uid}>" 1>&2
+    echo 'error'
+  fi
+done                                                                |
+awk ' END { if(NR != 0) { exit 1; } } '
 
 #####################################################################
 # main routine
 #####################################################################
 
-cat <<'EOF'                                                         |
+{
+  cat <<'EOF'                                                       |
 - name: create account
   hosts: all
   gather_facts: no
   become: yes
-  vars:
-    user_name: "<<user_name>>"
-    user_id: "<<user_id>>"
   tasks:
-    - name: check the user NOT exist
-      ansible.builtin.shell: |
-        id "{{ user_name }}"
-      register: result
-      failed_when: result.rc not in [0, 1]
-
-    - name: create account
-      ansible.builtin.user:
-        name: "{{ user_name }}"
-        password: "{{ user_name | password_hash('sha512') }}"
-        shell: "/bin/bash"
-        uid: "{{ user_id }}"
-      when: result.rc == 1
+  - name: create account if
+    include_tasks: <<playbook_body_file>>
+    with_items:
 EOF
+  sed 's!<<playbook_body_file>>!'"${PLAYBOOK_BODY_FILE}"'!'
 
-sed 's#<<user_name>>#'"${USER_NAME}"'#'                             |
-sed 's#<<user_id>>#'"${USER_ID}"'#'                                 |
-cat >"${PLAYBOOK}"
+  jq -c '.[]' "${JSON_MIDDLE_FILE}"                                 |
+  while read -r line;
+  do
+    user_name=$(echo "${line}" | jq -r '.name')
+    user_id=$(echo "${line}" | jq -r '.uid')
+
+    printf '      - { "user_name":"%s", "user_id":"%s" }\n'         \
+      "${user_name}" "${user_id}"
+  done
+} >"${PLAYBOOK_IF_FILE}"
+
+cat <<'EOF'                                                         |
+- name: check the account exist
+  ansible.builtin.shell: |
+    id "{{ item.user_name }}"
+  register: result
+  failed_when: result.rc not in [0, 1]
+
+- name: create account
+  ansible.builtin.user:
+    name: "{{ item.user_name }}"
+    uid: "{{ item.user_id }}"
+    password: "{{ item.user_name | password_hash('sha512') }}"
+    shell: "/bin/bash"
+  when: result.rc == 1
+EOF
+cat >"${PLAYBOOK_BODY_FILE}"
 
 if [ "${IS_DRYRUN}" = 'yes' ]; then
-  cat "${PLAYBOOK}"
+  echo '=== IF ====================================================='
+  cat "${PLAYBOOK_IF_FILE}"
+  echo ''
+  echo '=== BODY ==================================================='
+  cat "${PLAYBOOK_BODY_FILE}"
 else
-  ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}"
+  ansible-playbook -i "${INVENTORY}" "${PLAYBOOK_IF_FILE}"
 fi

@@ -125,11 +125,14 @@ cat <<'EOF'                                                         |
     - name: check the user exist
       ansible.builtin.shell: |
         id "{{ user_name }}"
+      register: result
+      failed_when: result.rc not in [0, 1]
 
     - name: change the password
       ansible.builtin.user:
         name: "{{ user_name }}"
         password: "{{ password | password_hash('sha512') }}"
+      when: result.rc == 0
 EOF
 
 sed 's#<<user_name>>#'"${USER_NAME}"'#'                             |

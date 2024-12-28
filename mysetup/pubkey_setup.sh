@@ -104,37 +104,40 @@ cat <<'EOF'                                                         |
     - name: check the user exist
       ansible.builtin.shell: |
         id "{{ user_name }}"
+      register: check_result
+      failed_when: check_result.rc not in [0, 1]
 
-    - name: get home directory
-      ansible.builtin.shell: "echo ${HOME}"
-      register: result
-      become_user: "{{ user_name }}"
+    - name: exec setup
+      when: check_result.rc == 0
+      block:
+      - name: get home directory
+        ansible.builtin.shell: "echo ${HOME}"
+        register: get_result
+        become_user: "{{ user_name }}"
 
-    - name: set home directory parameter
-      ansible.builtin.set_fact:
-        home_dir: "{{ result.stdout }}"
+      - name: set home directory parameter
+        ansible.builtin.set_fact:
+          home_dir: "{{ get_result.stdout }}"
 
-    - name: create ssh directory
-      ansible.builtin.file:
-        path: "{{ home_dir }}/.ssh"
-        state: "directory"
-        owner: "{{ user_name }}"
-        group: "{{ user_name }}"
-        mode: "755"
+      - name: create ssh directory
+        ansible.builtin.file:
+          path: "{{ home_dir }}/.ssh"
+          state: "directory"
+          mode: "755"
+        become_user: "{{ user_name }}"
 
-    - name: copy secret key
-      ansible.builtin.copy:
-        remote_src: false
-        src: "{{ secret_key }}"
-        dest: "{{ home_dir }}/.ssh/{{ secret_key | basename }}"
-        owner: "{{ user_name }}"
-        group: "{{ user_name }}"
-        mode: "600"
+      - name: copy secret key
+        ansible.builtin.copy:
+          remote_src: false
+          src: "{{ secret_key }}"
+          dest: "{{ home_dir }}/.ssh/{{ secret_key | basename }}"
+          mode: "600"
+        become_user: "{{ user_name }}"
 
-    - name: setup authorized_keys
-      ansible.posix.authorized_key:
-        user: "{{ user_name }}"
-        key: "{{ lookup('file', public_key) }}"
+      - name: setup authorized_keys
+        ansible.posix.authorized_key:
+          user: "{{ user_name }}"
+          key: "{{ lookup('file', public_key) }}"
 EOF
 
 sed 's#<<user_name>>#'"${USER_NAME}"'#'                             |

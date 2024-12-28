@@ -104,16 +104,21 @@ cat <<'EOF'                                                         |
     - name: check the user exist
       ansible.builtin.shell: |
         id "{{ user_name }}"
+      register: result
+      failed_when: result.rc not in [0, 1]
 
-    - name: change user id
-      ansible.builtin.user:
-        name: "{{ user_name }}"
-        uid: "{{ user_id }}"
+    - name: exec change
+      when: result.rc == 0
+      block:
+      - name: change user id
+        ansible.builtin.user:
+          name: "{{ user_name }}"
+          uid: "{{ user_id }}"
 
-    - name: change group id
-      ansible.builtin.group:
-        name: "{{ group_name }}"
-        gid: "{{ group_id }}"
+      - name: change group id
+        ansible.builtin.group:
+          name: "{{ group_name }}"
+          gid: "{{ group_id }}"
 EOF
 
 sed 's#<<user_name>>#'"${USER_NAME}"'#'                             |
