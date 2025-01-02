@@ -106,7 +106,6 @@ fi
 {
   if ! type ansible >/dev/null 2>&1; then
     echo '. '"$(realpath "${ENV_PATH}/bin/activate")"
-
   fi
 
   echo 'export ANSIBLE_CONFIG='"$(realpath "${CONFIG_PATH}")"

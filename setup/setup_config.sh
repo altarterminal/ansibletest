@@ -10,10 +10,11 @@ print_usage_and_exit () {
 Usage   : ${0##*/}
 Options : -o<output path> -f
 
-Prepare ansible.cfg to <output path>
+Prepare ansible.cfg to <output path>.
+Do nothing if the file already exists.
 
--o: specify the output file path (default: ./ansible.cfg)
--f: enable the overwrite when the file has already exist
+-o: Specify the output file path (default: ./ansible.cfg).
+-f: Enable the overwrite when the file already exists.
 USAGE
   exit 1
 }
@@ -51,25 +52,25 @@ if [ -z "${opt_o}" ]; then
   exit 1
 fi
 
-readonly CONFIG_FILE=${opt_o}
-readonly IS_FORCE=${opt_f}
+readonly CONFIG_FILE="${opt_o}"
+readonly IS_FORCE="${opt_f}"
 
 #####################################################################
 # prepare
 #####################################################################
 
-if [ -f "${CONFIG_FILE}" ]; then
-  if [ "${IS_FORCE}" = 'yes' ]; then
-    echo "INFO:${0##*/}: overwrite the existing <${CONFIG_FILE}>" 1>&2
-  else
-    echo "ERROR:${0##*/}: there has already been <${CONFIG_FILE}>" 1>&2
-    exit 1
-  fi
+if [ "${IS_FORCE}" = 'yes' ] && [ -e "${CONFIG_FILE}" ]; then
+  rm "${CONFIG_FILE}"
 fi
 
 #####################################################################
 # main routine
 #####################################################################
+
+if [ -e "${CONFIG_FILE}" ]; then
+  echo "INFO:${0##*/}: there is already <${CONFIG_FILE}> and nothing is done" 1>&2
+  exit
+fi
 
 cat <<'EOF'                                                         |
 [defaults]

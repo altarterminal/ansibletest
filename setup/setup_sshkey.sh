@@ -10,10 +10,10 @@ print_usage_and_exit () {
 Usage   : ${0##*/}
 Options : -o<output path> -f
 
-Prepare a ssh secret key to <output path>
+Prepare a ssh secret key to <output path>.
 
--o: specify the output file path (default: ./ansible_sshkey)
--f: enable the overwrite when the file has already exist
+-o: Specify the output file path (default: ./ansible_sshkey).
+-f: Enable the overwrite when the file already exists.
 USAGE
   exit 1
 }
@@ -51,24 +51,24 @@ if [ -z "${opt_o}" ]; then
   exit 1
 fi
 
-readonly KEY_FILE=${opt_o}
-readonly IS_FORCE=${opt_f}
+readonly KEY_FILE="${opt_o}"
+readonly IS_FORCE="${opt_f}"
 
 #####################################################################
 # prepare
 #####################################################################
 
-if [ -f "${KEY_FILE}" ]; then
-  if [ "${IS_FORCE}" = 'yes' ]; then
-    echo "INFO:${0##*/}: overwrite the existing <${KEY_FILE}>" 1>&2
-  else 
-    echo "ERROR:${0##*/}: there has already been <${KEY_FILE}>" 1>&2
-    exit 1
-  fi
+if [ "${IS_FORCE}" = 'yes' ] && [ -e "${KEY_FILE}" ]; then
+  rm "${KEY_FILE}"
 fi
 
 #####################################################################
 # main routine
 #####################################################################
+
+if [ -e "${KEY_FILE}" ]; then
+  echo "INFO:${0##*/}: there is already <${KEY_FILE}> and nothing is done" 1>&2
+  exit
+fi
 
 cp ~/.ssh/id_rsa "${KEY_FILE}"
