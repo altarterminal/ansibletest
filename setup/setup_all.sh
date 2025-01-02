@@ -84,7 +84,7 @@ readonly THIS_DIR="${0%/*}"
 # main routine
 #####################################################################
 
-if ! "${THIS_DIR}/setup_command.sh" "${ENV_PATH}"; then
+if ! "${THIS_DIR}/setup_command.sh" -o"${ENV_PATH}"; then
   echo "ERROR:${0##*/}: command setup failed" 1>&2
   exit 1
 fi
