@@ -10,7 +10,8 @@ print_usage_and_exit () {
 Usage   : ${0##*/}
 Options : -e<env path> -c<config path> -k<sshkey path> -o<out name>
 
-Prepare ansible.cfg to <output path>
+Prepare the whole ansible setting.
+Output the script name to stdout to enable it when you source.
 
 -e: specify the venv path (default: ./ansible_env)
 -c: specify the config file path (default: ./ansible.cfg)
@@ -72,12 +73,12 @@ if [ -z "${opt_o}" ]; then
   exit 1
 fi
 
-readonly ENV_PATH=${opt_e}
-readonly CONFIG_PATH=${opt_c}
-readonly KEY_PATH=${opt_k}
-readonly OUT_FILE='./ansible_enable.sh'
+readonly ENV_PATH="${opt_e}"
+readonly CONFIG_PATH="${opt_c}"
+readonly KEY_PATH="${opt_k}"
+readonly OUT_FILE="${opt_o}"
 
-readonly THIS_DIR=${0%/*}
+readonly THIS_DIR="${0%/*}"
 
 #####################################################################
 # main routine
@@ -104,10 +105,12 @@ fi
 
 {
   if ! type ansible >/dev/null 2>&1; then
-    echo '. '"$(realpath ${ENV_PATH}/bin/activate)"
+    echo '. '"$(realpath "${ENV_PATH}/bin/activate")"
 
   fi
 
-  echo 'export ANSIBLE_CONFIG='"$(realpath ${CONFIG_PATH})"
-  echo 'export ANSIBLE_PRIVATE_KEY_FILE='"$(realpath ${KEY_PATH})"
+  echo 'export ANSIBLE_CONFIG='"$(realpath "${CONFIG_PATH}")"
+  echo 'export ANSIBLE_PRIVATE_KEY_FILE='"$(realpath "${KEY_PATH}")"
 } >"${OUT_FILE}"
+
+echo "$(realpath "${OUT_FILE}")"
