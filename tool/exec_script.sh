@@ -161,6 +161,6 @@ cat >"${PLAYBOOK_FILE}"
 if [ "${IS_DRYRUN}" = 'yes' ]; then
   cat "${PLAYBOOK_FILE}"
 else
-  ANSIBLE_SHELL_ALLOW_WORLD_READABLE_TEMP=1 ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}"
-  B
+  ANSIBLE_SHELL_ALLOW_WORLD_READABLE_TEMP=1 \
+  ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}"
 fi
