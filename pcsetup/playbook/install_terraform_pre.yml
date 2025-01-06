@@ -1,0 +1,18 @@
+- name: install terraform pre process
+  hosts: all
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: install dependency
+      apt:
+        name: 
+          - ca-certificates
+          - gnupg
+          - lsb-release
+
+    - name: remove existing software
+      apt:
+        name:
+          - terraform 
+        autoremove: yes
+        state: absent

@@ -1,0 +1,51 @@
+- name: install terraform main process
+  hosts: all
+  gather_facts: no
+  become: yes
+  environment:
+    http_proxy:  "{{ proxy_setting }}"
+    https_proxy: "{{ proxy_setting }}"
+  vars:
+    gpg_url: "https://apt.releases.hashicorp.com/gpg"
+    gpg_path: "/etc/apt/keyrings/hashicorp.gpg"
+    download_url: "https://apt.releases.hashicorp.com"
+    list_path: "/etc/apt/sources.list.d/hashicorp.list"
+  tasks:
+    - name: gather date and time
+      ansible.builtin.setup:
+        gather_subset:
+          - "date_time"
+      when: ansible_date_time is not defined
+
+    - name: set variable
+      ansible.builtin.set_fact:
+        tmp_path: "/tmp/tmp_gpg_{{ ansible_date_time.date }}"
+
+    - name: download gpg
+      get_url:
+        url: "{{ gpg_url }}"
+        dest: "{{ tmp_path }}"
+        use_proxy: "{{ 'true' if proxy_setting != '' else 'false' }}"
+
+    - name: register external repository
+      shell: |
+        mkdir -m 0755 -p $(dirname "{{ gpg_path }}")
+        [ -e "{{ gpg_path }}" ] && rm "{{ gpg_path }}"
+
+        cat "{{ tmp_path }}" | gpg --dearmor -o "{{ gpg_path }}"
+
+        gpg --no-default-keyring --keyring "{{ gpg_path }}" --fingerprint
+
+        printf 'deb [arch=%s signed-by=%s] %s %s main' \
+         "$(dpkg --print-architecture)" "{{ gpg_path }}" "{{ download_url }}" "$(lsb_release -cs)" |
+        tee "{{ list_path }}" >/dev/null
+
+    - name: delete tmp gpg
+      shell: |
+        rm "{{ tmp_path }}"
+
+    - name: install terraform
+      apt:
+        update_cache: yes
+        name:
+          - terraform
