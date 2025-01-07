@@ -6,7 +6,11 @@
     http_proxy:  "{{ proxy_setting }}"
     https_proxy: "{{ proxy_setting }}"
   vars:
-    DOCKER_VER: "5:25.0.5-1~ubuntu.22.04~jammy"
+    gpg_url: "https://download.docker.com/linux/ubuntu/gpg"
+    gpg_path: "/etc/apt/keyrings/docker.gpg"
+    download_url: "https://download.docker.com/linux/ubuntu"
+    list_path: "/etc/apt/sources.list.d/docker.list"
+    docker_ver: "5:25.0.5-1~ubuntu.22.04~jammy"
   tasks:
     - name: gather date and time
       setup:
@@ -14,39 +18,38 @@
           - "date_time"
       when: ansible_date_time is not defined
 
-    - name: download tmp docker gpg
+    - name: set variable
+      ansible.builtin.set_fact:
+        tmp_path: "/tmp/tmp_gpg_{{ ansible_date_time.date }}"
+
+    - name: download tmp gpg
       get_url:
-        url: "https://download.docker.com/linux/ubuntu/gpg"
-        dest: "/tmp/docker_gpg_{{ ansible_date_time.date }}"
+        url: "{{ gpg_url  }}"
+        dest: "{{ tmp_path }}"
         use_proxy: "{{ 'true' if proxy_setting != '' else 'false' }}"
 
     - name: register external repository
       shell: |
-        GPG_PATH='/etc/apt/keyrings/docker.gpg'
-        DOCKER_URL='https://download.docker.com/linux/ubuntu'
-        LIST_PATH='/etc/apt/sources.list.d/docker.list'
+        mkdir -m 0755 -p $(dirname "{{ gpg_path }}")
+        [ -e "{{ gpg_path }}" ] && rm "{{ gpg_path }}"
 
-        mkdir -m 0755 -p $(dirname "${GPG_PATH}")
-        [ -e "${GPG_PATH}" ] && rm "${GPG_PATH}"
+        cat "{{ tmp_path }}" | gpg --dearmor -o "{{ gpg_path }}"
 
-        cat '/tmp/docker_gpg_{{ ansible_date_time.date }}'           |
-        gpg --dearmor -o "${GPG_PATH}"
+        printf 'deb [arch=%s signed-by=%s] %s %s stable'   \
+          "$(dpkg --print-architecture)" "{{ gpg_path }}"  \
+          "{{ download_url }}" "$(lsb_release -cs)"        |
+        tee "{{ list_path }}" >/dev/null
 
-        printf 'deb [arch=%s signed-by=%s] %s %s stable'             \
-               "$(dpkg --print-architecture)" "${GPG_PATH}"          \
-               "${DOCKER_URL}" "$(lsb_release -cs)"                  |
-        tee "${LIST_PATH}" >/dev/null
-
-    - name: delete tmp docker gpg
+    - name: delete tmp gpg
       shell: |
-        rm '/tmp/docker_gpg_{{ ansible_date_time.date }}'
+        rm "{{ tmp_path }}"
 
     - name: install the specific version docker
       apt:
         update_cache: yes
         name:
-          - docker-ce-cli={{ DOCKER_VER }}
-          - docker-ce={{ DOCKER_VER }}
+          - docker-ce-cli={{ docker_ver }}
+          - docker-ce={{ docker_ver }}
 
     - name: hold the docker version
       shell: apt-mark hold docker-ce-cli docker-ce

@@ -36,8 +36,9 @@
 
         gpg --no-default-keyring --keyring "{{ gpg_path }}" --fingerprint
 
-        printf 'deb [arch=%s signed-by=%s] %s %s main' \
-         "$(dpkg --print-architecture)" "{{ gpg_path }}" "{{ download_url }}" "$(lsb_release -cs)" |
+        printf 'deb [arch=%s signed-by=%s] %s %s main'     \
+          "$(dpkg --print-architecture)" "{{ gpg_path }}"  \
+          "{{ download_url }}" "$(lsb_release -cs)"        |
         tee "{{ list_path }}" >/dev/null
 
     - name: delete tmp gpg
