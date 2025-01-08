@@ -2,21 +2,40 @@
   hosts: all
   gather_facts: no
   become: yes
+  vars:
+    conf_path: "/etc/systemd/system/docker.service.d/http-proxy.conf"
   tasks:
-     - name: set proxy
-       shell: |
-         type docker >/dev/null 2>&1
-
-         mkdir -p '/etc/systemd/system/docker.service.d'
-
-         {
-           echo '[Service]'
-           echo 'Environment="HTTP_PROXY=http://{{ proxy_setting }}"'
-           echo 'Environment="HTTPS_PROXY=http://{{ proxy_setting }}"'
-         }                                                            |
-         tee '/etc/systemd/system/docker.service.d/http-proxy.conf'   |
-         cat >/dev/null
-
-         systemctl daemon-reload
-         systemctl restart docker
+     - name: set proxy under its environment
        when: proxy_setting != ""
+       block:
+       - name: check
+         ansible.builtin.shell: type docker >/dev/null 2>&1
+
+       - name: prepare serice directory
+         ansible.builtin.file:
+           path: "{{ conf_path | dirname }}"
+           owner: root
+           group: root
+           mode: "0755"
+           state: directory
+
+       - name: set proxy
+         ansible.builtin.blockinfile:
+           path: "{{ conf_path }}"
+           block: |
+             [Service]
+             Environment = "HTTP_PROXY=http://{{ proxy_setting }}"
+             Environment = "HTTPS_PROXY=http://{{ proxy_setting }}"
+           create: true
+           owner: root
+           group: root
+
+       - name: reflect the proxy
+         ansible.builtin.systemd_service:
+           name: docker.service
+           state: reloaded
+
+       - name: restart the service
+         ansible.builtin.systemd_service:
+           name: docker.service
+           state: restarted
