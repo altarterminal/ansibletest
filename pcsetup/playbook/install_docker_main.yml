@@ -23,8 +23,8 @@
         tmp_path: "/tmp/tmp_gpg_{{ ansible_date_time.date }}"
 
     - name: download tmp gpg
-      get_url:
-        url: "{{ gpg_url  }}"
+      ansible.builtin.get_url:
+        url: "{{ gpg_url }}"
         dest: "{{ tmp_path }}"
         use_proxy: "{{ 'true' if proxy_setting != '' else 'false' }}"
 
