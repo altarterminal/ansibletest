@@ -28,28 +28,38 @@
         dest: "{{ tmp_path }}"
         use_proxy: "{{ 'true' if proxy_setting != '' else 'false' }}"
 
+    - name: prepare gpg directory
+      ansible.builtin.file:
+        path: "{{ gpg_path | dirname }}"
+        owner: root
+        group: root
+        mode: "0755"
+        state: directory
+
+    - name: delete old gpg (cannot skip this)
+      ansible.builtin.file:
+        path: "{{ gpg_path }}"
+        state: absent
+
     - name: register external repository
-      shell: |
-        mkdir -m 0755 -p $(dirname "{{ gpg_path }}")
-        [ -e "{{ gpg_path }}" ] && rm "{{ gpg_path }}"
-
-        cat "{{ tmp_path }}" | gpg --dearmor -o "{{ gpg_path }}"
-
+      ansible.builtin.shell: |
+        gpg --dearmor -o "{{ gpg_path }}" < "{{ tmp_path }}"
         printf 'deb [arch=%s signed-by=%s] %s %s stable'   \
           "$(dpkg --print-architecture)" "{{ gpg_path }}"  \
           "{{ download_url }}" "$(lsb_release -cs)"        |
         tee "{{ list_path }}" >/dev/null
 
     - name: delete tmp gpg
-      shell: |
-        rm "{{ tmp_path }}"
+      ansible.builtin.file:
+        path: "{{ tmp_path }}"
+        state: absent
 
-    - name: install the specific version docker
-      apt:
+    - name: install the specific version
+      ansible.builtin.apt:
         update_cache: yes
         name:
           - docker-ce-cli={{ docker_ver }}
           - docker-ce={{ docker_ver }}
 
-    - name: hold the docker version
-      shell: apt-mark hold docker-ce-cli docker-ce
+    - name: hold the version
+      ansible.builtin.shell: apt-mark hold docker-ce-cli docker-ce
