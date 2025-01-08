@@ -2,15 +2,21 @@
   hosts: all
   gather_facts: no
   become: yes
+  vars:
+    conf_path: "/etc/wgetrc"
   tasks:
-    - name: set proxy
-      shell: |
-        type wget >/dev/null 2>&1
-
-        if ! cat '/etc/wgetrc' | grep -q '^http_proxy'; then
-          echo 'http_proxy = http://{{ proxy_setting }}'  >> '/etc/wgetrc'
-        fi
-        if ! cat '/etc/wgetrc' | grep -q '^https_proxy'; then
-          echo 'https_proxy = http://{{ proxy_setting }}' >> '/etc/wgetrc'
-        fi
+    - name: set proxy under its environment
       when: proxy_setting != ""
+      block:
+      - name: check
+        ansible.builtin.shell: type wget >/dev/null 2>&1
+
+      - name: set proxy
+        ansible.builtin.blockinfile:
+          path: "{{ conf_path }}"
+          block: |
+            http_proxy=http://{{ proxy_setting }}
+            https_proxy=http://{{ proxy_setting }}
+          create: true
+          owner: root
+          group: root
