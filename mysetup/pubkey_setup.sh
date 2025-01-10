@@ -24,8 +24,8 @@ USAGE
 #####################################################################
 
 opr=''
-opt_u=$(whoami)
-opt_k=${HOME}/.ssh/id_rsa
+opt_u="$(whoami)"
+opt_k="${HOME}/.ssh/id_rsa"
 opt_d='no'
 
 i=1
@@ -49,7 +49,7 @@ do
   i=$((i + 1))
 done
 
-readonly IS_DRYRUN=${opt_d}
+readonly IS_DRYRUN="${opt_d}"
 
 if [ "${IS_DRYRUN}" = 'no' ]; then
   if ! type ansible-playbook >/dev/null 2>&1; then
@@ -62,7 +62,7 @@ if [ "${IS_DRYRUN}" = 'no' ]; then
     exit 1
   fi
 
-  readonly INVENTORY=${opr}
+  readonly INVENTORY="${opr}"
 fi
 
 if [ ! -f "${opt_k%.pub}" ]     || [ ! -r "${opt_k%.pub}" ] ||
@@ -76,15 +76,15 @@ if [ -z "${opt_u}" ]; then
   exit 1
 fi
 
-readonly USER_NAME=${opt_u}
-readonly KEY_PATH=$(realpath ${opt_k%.pub})
-readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
+readonly USER_NAME="${opt_u}"
+readonly KEY_PATH="$(realpath "${opt_k%.pub}")"
+readonly TEMP_NAME="${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX"
 
 #####################################################################
 # prepare
 #####################################################################
 
-readonly PLAYBOOK=$(mktemp "${TEMP_NAME}")
+readonly PLAYBOOK="$(mktemp "${TEMP_NAME}")"
 trap "[ -e ${PLAYBOOK} ] && rm ${PLAYBOOK}" EXIT
 
 #####################################################################
@@ -110,34 +110,34 @@ cat <<'EOF'                                                         |
     - name: exec setup
       when: check_result.rc == 0
       block:
-      - name: get home directory
-        ansible.builtin.shell: "echo ${HOME}"
-        register: get_result
-        become_user: "{{ user_name }}"
+        - name: get home directory
+          ansible.builtin.shell: "echo ${HOME}"
+          register: get_result
+          become_user: "{{ user_name }}"
 
-      - name: set home directory parameter
-        ansible.builtin.set_fact:
-          home_dir: "{{ get_result.stdout }}"
+        - name: set home directory parameter
+          ansible.builtin.set_fact:
+            home_dir: "{{ get_result.stdout }}"
 
-      - name: create ssh directory
-        ansible.builtin.file:
-          path: "{{ home_dir }}/.ssh"
-          state: "directory"
-          mode: "755"
-        become_user: "{{ user_name }}"
+        - name: create ssh directory
+          ansible.builtin.file:
+            path: "{{ home_dir }}/.ssh"
+            state: "directory"
+            mode: "755"
+          become_user: "{{ user_name }}"
 
-      - name: copy secret key
-        ansible.builtin.copy:
-          remote_src: false
-          src: "{{ secret_key }}"
-          dest: "{{ home_dir }}/.ssh/{{ secret_key | basename }}"
-          mode: "600"
-        become_user: "{{ user_name }}"
+        - name: copy secret key
+          ansible.builtin.copy:
+            remote_src: false
+            src: "{{ secret_key }}"
+            dest: "{{ home_dir }}/.ssh/{{ secret_key | basename }}"
+            mode: "600"
+          become_user: "{{ user_name }}"
 
-      - name: setup authorized_keys
-        ansible.posix.authorized_key:
-          user: "{{ user_name }}"
-          key: "{{ lookup('file', public_key) }}"
+        - name: setup authorized_keys
+          ansible.posix.authorized_key:
+            user: "{{ user_name }}"
+            key: "{{ lookup('ansible.builtin.file', public_key) }}"
 EOF
 
 sed 's#<<user_name>>#'"${USER_NAME}"'#'                             |
@@ -147,5 +147,6 @@ cat >"${PLAYBOOK}"
 if [ "${IS_DRYRUN}" = 'yes' ]; then
   cat "${PLAYBOOK}"
 else
-  ANSIBLE_PIPELINING=1 ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}"
+  ANSIBLE_SHELL_ALLOW_WORLD_READABLE_TEMP=1 ANSIBLE_PIPELINING=1 \
+  ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}"
 fi
