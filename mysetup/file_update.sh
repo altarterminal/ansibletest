@@ -8,13 +8,14 @@ set -eu
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
 Usage   : ${0##*/} <target file> <inventory file>
-Options : -u<user name> -c<update cotent> -f<update file> -d
+Options : -u<user name> -c<update cotent> -f<update file> -m<suffix marker> -d
 
 Update the file of <file path>
 
 -u: Specify the user name to manipulate (default: $(whoami)).
 -c: Specify the file content to overwrite (default: <<empty>>).
 -f: Specify the file path which includes the content to overwrite (This is prior to -c option if something is specified).
+-m: Specify the suffix marker for ANSIBLE MANAGED BLOCK (default: none)
 -d: Enable dry-run (= only output the playbook and not execute it) (default: disabled).
 USAGE
   exit 1
@@ -29,6 +30,7 @@ opr_i=''
 opt_u=$(whoami)
 opt_c=''
 opt_f=''
+opt_m=''
 opt_d='no'
 
 i=1
@@ -39,6 +41,7 @@ do
     -u*)                 opt_u=${arg#-u}      ;;
     -c*)                 opt_c=${arg#-c}      ;;
     -f*)                 opt_f=${arg#-f}      ;;
+    -m*)                 opt_m=${arg#-m}      ;;
     -d)                  opt_d='yes'          ;;
     *)
       if [ $i -eq $(($# - 1)) ] && [ -z "${opr_f}" ]; then
@@ -92,6 +95,7 @@ fi
 readonly TARGET_FILE="${opr_f}"
 readonly INVENTORY_FILE="${opr_i}"
 readonly USER_NAME="${opt_u}"
+readonly SUFFIX_MARKER="${opt_m}"
 
 readonly TEMP_PLAYBOOK_NAME="${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_playbook_XXXXXX"
 readonly TEMP_CONTENT_NAME="${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_content_XXXXXX"
@@ -151,12 +155,14 @@ fi
           ansible.builtin.blockinfile:
             path: "{{ target_file }}"
             create: true
+            marker: # {mark} ANSIBLE MANAGED BLOCK <<suffix_marker>>
             block: |
               <<input_content>>
           become_user: "{{ user_name }}" 
 EOF
   sed 's#<<user_name>>#'"${USER_NAME}"'#'                           |
   sed 's#<<target_file>>#'"${TARGET_FILE}"'#'                       |
+  sed 's#<<suffix_marker>>#'"${SUFFIX_MARKER}"'#'                   |
   awk '
     /<<input_content>>/ {
       while ((getline < "'"${CONTENT_FILE}"'") > 0) {
