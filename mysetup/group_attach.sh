@@ -26,8 +26,8 @@ USAGE
 #####################################################################
 
 opr=''
-opt_u=$(whoami)
-opt_g=$(id -nG | tr ' ' ',')
+opt_u="$(whoami)"
+opt_g="$(id -nG | tr ' ' ',')"
 opt_aj=''
 opt_tj=''
 opt_d='no'
@@ -55,7 +55,7 @@ do
   i=$((i + 1))
 done
 
-readonly IS_DRYRUN=${opt_d}
+readonly IS_DRYRUN="${opt_d}"
 
 if [ "${IS_DRYRUN}" ]; then
   if ! type ansible-playbook >/dev/null 2>&1; then
@@ -68,7 +68,7 @@ if [ "${IS_DRYRUN}" ]; then
     exit 1
   fi
 
-  readonly INVENTORY_FILE=${opr}
+  readonly INVENTORY_FILE="${opr}"
 fi
 
 if [ -n "${opt_aj}" ] || [ -n "${opt_tj}" ]; then
@@ -87,25 +87,25 @@ if [ -n "${opt_aj}" ] || [ -n "${opt_tj}" ]; then
   readonly JSON_TYPE_FILE="${opt_tj}"
 else
   readonly IS_JSON='no'
-  readonly USER_NAME=${opt_u}
-  readonly GROUP_NAMES=${opt_g}
+  readonly USER_NAME="${opt_u}"
+  readonly GROUP_NAMES="${opt_g}"
 fi
 
-readonly DATE=$(date '+%Y%m%d_%H%M%S')
+readonly DATE="$(date '+%Y%m%d_%H%M%S')"
 
-readonly TEMP_IF_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_if_XXXXXX
-readonly TEMP_BODY_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_body_XXXXXX
-readonly TEMP_JSON_ACCOUNT_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_json_account_XXXXXX
-readonly TEMP_JSON_TYPE_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_json_type_XXXXXX
+readonly TEMP_IF_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_if_XXXXXX"
+readonly TEMP_BODY_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_body_XXXXXX"
+readonly TEMP_JSON_ACCOUNT_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_json_account_XXXXXX"
+readonly TEMP_JSON_TYPE_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_json_type_XXXXXX"
 
 #####################################################################
 # prepare
 #####################################################################
 
-readonly PLAYBOOK_IF_FILE=$(mktemp "${TEMP_IF_NAME}")
-readonly PLAYBOOK_BODY_FILE=$(mktemp "${TEMP_BODY_NAME}")
-readonly JSON_ACCOUNT_MIDDLE_FILE=$(mktemp "${TEMP_JSON_ACCOUNT_NAME}")
-readonly JSON_TYPE_MIDDLE_FILE=$(mktemp "${TEMP_JSON_TYPE_NAME}")
+readonly PLAYBOOK_IF_FILE="$(mktemp "${TEMP_IF_NAME}")"
+readonly PLAYBOOK_BODY_FILE="$(mktemp "${TEMP_BODY_NAME}")"
+readonly JSON_ACCOUNT_MIDDLE_FILE="$(mktemp "${TEMP_JSON_ACCOUNT_NAME}")"
+readonly JSON_TYPE_MIDDLE_FILE="$(mktemp "${TEMP_JSON_TYPE_NAME}")"
 
 trap "
   [ -e ${PLAYBOOK_IF_FILE} ] && rm ${PLAYBOOK_IF_FILE}

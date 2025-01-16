@@ -47,7 +47,7 @@ do
   i=$((i + 1))
 done
 
-readonly IS_DRYRUN=${opt_d}
+readonly IS_DRYRUN="${opt_d}"
 
 if [ "${IS_DRYRUN}" = 'no' ]; then
   if ! type ansible-playbook >/dev/null 2>&1; then
@@ -60,7 +60,7 @@ if [ "${IS_DRYRUN}" = 'no' ]; then
     exit 1
   fi
 
-  readonly INVENTORY=${opr}
+  readonly INVENTORY="${opr}"
 fi
 
 if [ -z "${opt_u}" ]; then
@@ -68,14 +68,14 @@ if [ -z "${opt_u}" ]; then
   exit 1
 fi
 
-readonly USER_NAME=${opt_u}
-readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
+readonly USER_NAME="${opt_u}"
+readonly TEMP_NAME="${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX"
 
 #####################################################################
 # prepare
 #####################################################################
 
-readonly PLAYBOOK=$(mktemp "${TEMP_NAME}")
+readonly PLAYBOOK="$(mktemp "${TEMP_NAME}")"
 trap "[ -e ${PLAYBOOK} ] && rm ${PLAYBOOK}" EXIT
 
 #####################################################################

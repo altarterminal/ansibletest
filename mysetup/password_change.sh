@@ -62,7 +62,7 @@ if [ "${IS_DRYRUN}" = 'no' ]; then
     exit 1
   fi
 
-  readonly INVENTORY=${opr}
+  readonly INVENTORY="${opr}"
 fi
 
 if [ -z "${opt_u}" ]; then
@@ -75,14 +75,14 @@ if ! printf '%s\n' "${opt_i}" | grep -Eq '^[0-9]+$'; then
   exit 1
 fi
 
-readonly USER_NAME=${opt_u}
-readonly TEMP_NAME=${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX
+readonly USER_NAME="${opt_u}"
+readonly TEMP_NAME="${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX"
 
 #####################################################################
 # prepare
 #####################################################################
 
-readonly PLAYBOOK=$(mktemp "${TEMP_NAME}")
+readonly PLAYBOOK="$(mktemp "${TEMP_NAME}")"
 trap "[ -e ${PLAYBOOK} ] && rm ${PLAYBOOK}; stty echo" EXIT
 
 if [ "${IS_DRYRUN}" = 'yes' ]; then
@@ -106,7 +106,7 @@ else
   done
   stty echo
 
-  readonly PASSWORD=${first_pass}
+  readonly PASSWORD="${first_pass}"
 fi
 
 #####################################################################
