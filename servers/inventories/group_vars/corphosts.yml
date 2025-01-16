@@ -1,6 +1,0 @@
----
-
-ansible_ssh_user: ansible
-test_var_group: "inventories/group_vars/corphosts.yml"
-test_var_host: "inventories/group_vars/corphosts.yml"
-test_var_role: "inventories/group_vars/corphosts.yml"

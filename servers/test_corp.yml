@@ -1,6 +1,0 @@
----
-- name: test_book
-  hosts: corphosts
-  roles:
-    - role: server-maintenance
-      tags: server-maintenance
