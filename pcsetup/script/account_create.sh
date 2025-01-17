@@ -105,7 +105,7 @@ trap "
 if [ "${IS_JSON}" = 'yes' ]; then
   cat "${JSON_FILE}" >"${JSON_MIDDLE_FILE}"
 else
-  printf '[{"name":"%s","uid":"%s"}]\n' "${USER_NAME}" "${USER_ID}" |
+  printf '[{"name":"%s","id":"%s"}]\n' "${USER_NAME}" "${USER_ID}"  |
   cat >"${JSON_MIDDLE_FILE}"
 fi
 
@@ -117,15 +117,15 @@ jq -cr '.[]' "${JSON_MIDDLE_FILE}"                                  |
 while read -r line;
 do
   name=$(echo "${line}" | jq -r '.name // empty')
-  uid=$(echo "${line}" | jq -r '.uid // empty')
+  id=$(echo "${line}" | jq -r '.id // empty')
 
   if [ -z "${name}" ]; then
     echo "ERROR:${0##*/}: user name must be specified" 1>&2
     echo 'error'
   fi
 
-  if ! echo "${uid}" | grep -Eq '^[0-9]+$'; then
-    echo "ERROR:${0##*/}: invalid uid specified <${uid}>" 1>&2
+  if ! echo "${id}" | grep -Eq '^[0-9]+$'; then
+    echo "ERROR:${0##*/}: invalid id specified <${id}>" 1>&2
     echo 'error'
   fi
 done                                                                |
@@ -152,7 +152,7 @@ EOF
   while read -r line;
   do
     user_name=$(echo "${line}" | jq -r '.name')
-    user_id=$(echo "${line}" | jq -r '.uid')
+    user_id=$(echo "${line}" | jq -r '.id')
 
     printf '      - { "user_name":"%s", "user_id":"%s" }\n'         \
       "${user_name}" "${user_id}"

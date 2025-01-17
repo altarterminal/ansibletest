@@ -106,7 +106,7 @@ trap "
 if [ "${IS_JSON}" = 'yes' ]; then
   cat "${JSON_FILE}" >"${JSON_MIDDLE_FILE}"
 else
-  printf '[{"name":"%s","gid":"%s"}]\n'                             \
+  printf '[{"name":"%s","id":"%s"}]\n'                              \
     "${GROUP_NAME}" "${GROUP_ID}"                                   |
   cat >"${JSON_MIDDLE_FILE}"
 fi
@@ -119,15 +119,15 @@ jq -cr '.[]' "${JSON_MIDDLE_FILE}"                                  |
 while read -r line;
 do
   name=$(echo "${line}" | jq -r '.name // empty')
-  gid=$(echo "${line}" | jq -r '.gid // empty')
+  id=$(echo "${line}" | jq -r '.id // empty')
 
   if [ -z "${name}" ]; then
     echo "ERROR:${0##*/}: user name must be specified" 1>&2
     echo 'error'
   fi
 
-  if ! echo "${gid}" | grep -Eq '^[0-9]+$'; then
-    echo "ERROR:${0##*/}: invalid gid specified <${gid}>" 1>&2
+  if ! echo "${id}" | grep -Eq '^[0-9]+$'; then
+    echo "ERROR:${0##*/}: invalid gid specified <${id}>" 1>&2
     echo 'error'
   fi
 done                                                                |
@@ -154,7 +154,7 @@ EOF
   while read -r line;
   do
     group_name=$(echo "${line}" | jq -r '.name')
-    group_id=$(echo "${line}" | jq -r '.gid')
+    group_id=$(echo "${line}" | jq -r '.id')
 
     printf '      - { "group_name":"%s", "group_id":"%s" }\n'       \
       "${group_name}" "${group_id}"
