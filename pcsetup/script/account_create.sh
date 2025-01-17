@@ -7,13 +7,15 @@ set -eu
 
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
-Usage   : ${0##*/} -i<inventory> <accout ledger>
-Options : -d
+Usage   : ${0##*/} <inventory file>
+Options : -u<user name> -i<user id> -j<json> -d
 
-Create accouts on <accout ledger> to hosts on <inventory>.
-If there has already been the account, nothing is done.
+Create account on <inventory file>.
 
--d: enable dry run (default: no)
+-u: Specify the user name (default: <$(whoami)> = the user name who executes this).
+-i: Specify the user id for uid and gid (default: <$(id -u)> = the id who executes this).
+-j: Specify the json on which the an array of user name and user id are defined. This is prioritized to -u and -i options.
+-d: Enable dry-run (default: disabled).
 USAGE
   exit 1
 }
@@ -23,7 +25,9 @@ USAGE
 #####################################################################
 
 opr=''
-opt_i=''
+opt_u=$(whoami)
+opt_i=$(id -u)
+opt_j=''
 opt_d='no'
 
 i=1
@@ -31,7 +35,9 @@ for arg in ${1+"$@"}
 do
   case "${arg}" in
     -h|--help|--version) print_usage_and_exit ;;
+    -u*)                 opt_u=${arg#-u}      ;;
     -i*)                 opt_i=${arg#-i}      ;;
+    -j*)                 opt_j=${arg#-j}      ;;
     -d)                  opt_d='yes'          ;;
     *)
       if [ $i -eq $# ] && [ -z "${opr}" ]; then
@@ -54,35 +60,76 @@ if [ "${IS_DRYRUN}" = 'no' ]; then
     exit 1
   fi
 
-  if [ ! -f "${opt_i}" ] || [ ! -r "${opt_i}" ]; then
-    echo "ERROR:${0##*/}: invalid inventory specified <${opt_i}>" 1>&2
+  if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
+    echo "ERROR:${0##*/}: invalid inventory specified <${opr}>" 1>&2
     exit 1
   fi
 
-  readonly INVENTORY_FILE=${opt_i}
+  readonly INVENTORY_FILE="${opr}"
 fi
 
-if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
-  echo "ERROR:${0##*/}: invalid ledger specified <${opr}>" 1>&2
-  exit 1
+if [ -n "${opt_j}" ]; then
+  if [ ! -f "${opt_j}" ] || [ ! -r "${opt_j}" ]; then
+    echo "ERROR:${0##*/}: invalid file specified" 1>&2
+    exit 1
+  fi
+
+  readonly IS_JSON='yes'
+  readonly JSON_FILE="${opt_j}"
+else
+  readonly IS_JSON='no'
+  readonly USER_NAME="${opt_u}"
+  readonly USER_ID="${opt_i}"
 fi
 
-readonly LEDGER_FILE=${opr}
-readonly DATE=$(date '+%Y%m%d_%H%M%S')_
+readonly DATE="$(date '+%Y%m%d_%H%M%S')"
 
-readonly TEMP_IF_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_if_XXXXXX
-readonly TEMP_BODY_NAME=${TMPDIR:-/tmp}/${0##*/}_${DATE}_body_XXXXXX
+readonly TEMP_IF_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_if_XXXXXX"
+readonly TEMP_BODY_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_body_XXXXXX"
+readonly TEMP_JSON_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_json_XXXXXX"
 
 #####################################################################
 # prepare
 #####################################################################
 
-readonly PLAYBOOK_IF_FILE=$(mktemp "${TEMP_IF_NAME}")
-readonly PLAYBOOK_BODY_FILE=$(mktemp "${TEMP_BODY_NAME}")
+readonly PLAYBOOK_IF_FILE="$(mktemp "${TEMP_IF_NAME}")"
+readonly PLAYBOOK_BODY_FILE="$(mktemp "${TEMP_BODY_NAME}")"
+readonly JSON_MIDDLE_FILE="$(mktemp "${TEMP_JSON_NAME}")"
+
 trap "
-  [ -e ${PLAYBOOK_IF_FILE} ] && rm ${PLAYBOOK_IF_FILE}
+  [ -e ${PLAYBOOK_IF_FILE} ]   && rm ${PLAYBOOK_IF_FILE}
   [ -e ${PLAYBOOK_BODY_FILE} ] && rm ${PLAYBOOK_BODY_FILE}
+  [ -e ${JSON_MIDDLE_FILE} ]   && rm ${JSON_MIDDLE_FILE}
 " EXIT
+
+if [ "${IS_JSON}" = 'yes' ]; then
+  cat "${JSON_FILE}" >"${JSON_MIDDLE_FILE}"
+else
+  printf '[{"name":"%s","uid":"%s"}]\n' "${USER_NAME}" "${USER_ID}" |
+  cat >"${JSON_MIDDLE_FILE}"
+fi
+
+#####################################################################
+# check
+#####################################################################
+
+jq -cr '.[]' "${JSON_MIDDLE_FILE}"                                  |
+while read -r line;
+do
+  name=$(echo "${line}" | jq -r '.name // empty')
+  uid=$(echo "${line}" | jq -r '.uid // empty')
+
+  if [ -z "${name}" ]; then
+    echo "ERROR:${0##*/}: user name must be specified" 1>&2
+    echo 'error'
+  fi
+
+  if ! echo "${uid}" | grep -Eq '^[0-9]+$'; then
+    echo "ERROR:${0##*/}: invalid uid specified <${uid}>" 1>&2
+    echo 'error'
+  fi
+done                                                                |
+awk ' END { if(NR != 0) { exit 1; } } '
 
 #####################################################################
 # main routine
@@ -101,7 +148,7 @@ trap "
 EOF
   sed 's!<<playbook_body_file>>!'"${PLAYBOOK_BODY_FILE}"'!'
 
-  jq -c '.[]' "${LEDGER_FILE}"                                      |
+  jq -c '.[]' "${JSON_MIDDLE_FILE}"                                 |
   while read -r line;
   do
     user_name=$(echo "${line}" | jq -r '.name')
