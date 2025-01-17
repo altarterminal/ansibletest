@@ -148,7 +148,8 @@ fi
 EOF
   cat
 
-  jq -r '.[].group.[]' "${JSON_TYPE_MIDDLE_FILE}"                   |
+  jq -r '.[].group' "${JSON_TYPE_MIDDLE_FILE}"                      |
+  while read -r line; do echo "${line}" | jq -r '.[]'; done         |
   sort                                                              |
   uniq                                                              |
   xargs -I@ echo "      - @"
