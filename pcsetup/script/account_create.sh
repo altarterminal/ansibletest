@@ -136,7 +136,7 @@ awk ' END { if(NR != 0) { exit 1; } } '
 #####################################################################
 
 {
-  cat <<'EOF'                                                       |
+  cat <<'  EOF'                                                     |
 - name: create account
   hosts: all
   gather_facts: no
@@ -145,7 +145,7 @@ awk ' END { if(NR != 0) { exit 1; } } '
   - name: create account if
     include_tasks: <<playbook_body_file>>
     with_items:
-EOF
+  EOF
   sed 's!<<playbook_body_file>>!'"${PLAYBOOK_BODY_FILE}"'!'
 
   jq -c '.[]' "${JSON_MIDDLE_FILE}"                                 |
@@ -159,7 +159,8 @@ EOF
   done
 } >"${PLAYBOOK_IF_FILE}"
 
-cat <<'EOF'                                                         |
+{
+  cat <<'  EOF'                                                     |
 - name: check the account exist
   ansible.builtin.shell: |
     id "{{ item.user_name }}"
@@ -173,8 +174,9 @@ cat <<'EOF'                                                         |
     password: "{{ item.user_name | password_hash('sha512') }}"
     shell: "/bin/bash"
   when: result.rc == 1
-EOF
-cat >"${PLAYBOOK_BODY_FILE}"
+  EOF
+  cat
+} >"${PLAYBOOK_BODY_FILE}"
 
 if [ "${IS_DRYRUN}" = 'yes' ]; then
   echo '=== IF ====================================================='

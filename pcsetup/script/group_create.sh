@@ -138,7 +138,7 @@ awk ' END { if(NR != 0) { exit 1; } } '
 #####################################################################
 
 {
-  cat <<'EOF'                                                       |
+  cat <<'  EOF'                                                     |
 - name: create group
   hosts: all
   gather_facts: no
@@ -147,7 +147,7 @@ awk ' END { if(NR != 0) { exit 1; } } '
   - name: create group if
     include_tasks: <<playbook_body_file>>
     with_items:
-EOF
+  EOF
   sed 's!<<playbook_body_file>>!'"${PLAYBOOK_BODY_FILE}"'!'
 
   jq -c '.[]' "${JSON_MIDDLE_FILE}"                                 |
@@ -161,13 +161,15 @@ EOF
   done
 } >"${PLAYBOOK_IF_FILE}"
 
-cat <<'EOF'                                                         |
+{
+  cat <<'  EOF'                                                     |
 - name: create group body
   ansible.builtin.group:
     name: "{{ item.group_name }}"
     gid: "{{ item.group_id }}"
-EOF
-cat >"${PLAYBOOK_BODY_FILE}"
+  EOF
+  cat
+} >"${PLAYBOOK_BODY_FILE}"
 
 if [ "${IS_DRYRUN}" = 'yes' ]; then
   echo '=== IF ====================================================='

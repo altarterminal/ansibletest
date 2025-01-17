@@ -135,7 +135,7 @@ fi
 #####################################################################
 
 {
-  cat <<'EOF'                                                       |
+  cat <<'  EOF'                                                     |
 - name: attach group
   hosts: all
   gather_facts: no
@@ -145,7 +145,7 @@ fi
     ansible.builtin.shell: |
       cat /etc/group | awk -F: '{print $1}' | grep '^{{ item }}$'
     with_items:
-EOF
+  EOF
   cat
 
   jq -r '.[].group' "${JSON_TYPE_MIDDLE_FILE}"                      |
@@ -154,11 +154,11 @@ EOF
   uniq                                                              |
   xargs -I@ echo "      - @"
 
-  cat <<'EOF'                                                       |
+  cat <<'  EOF'                                                     |
   - name: attach group if
     include_tasks: <<playbook_body_file>>
     with_items:
-EOF
+  EOF
   sed 's!<<playbook_body_file>>!'"${PLAYBOOK_BODY_FILE}"'!'
 
   jq -c '.[]' "${JSON_ACCOUNT_MIDDLE_FILE}"                         |
@@ -180,13 +180,13 @@ EOF
 } >"${PLAYBOOK_IF_FILE}"
 
 {
-  cat <<'EOF'                                                       |
+  cat <<'  EOF'                                                     |
 - name: attach group
   ansible.builtin.user:
     name: "{{ item.user_name }}"
     groups: "{{ item.group_list }}"
     append: yes
-EOF
+  EOF
   cat
 } >"${PLAYBOOK_BODY_FILE}"
 
