@@ -59,7 +59,7 @@ if [ "${IS_DRYRUN}" = 'no' ]; then
     exit 1
   fi
 
-  readonly INVENTORY="${opr}"
+  readonly INVENTORY_FILE="${opr}"
 fi
 
 if [ ! -f "${opt_j}" ] || [ ! -r "${opt_j}" ]; then
@@ -75,7 +75,7 @@ readonly TEMP_NAME="${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX"
 # prepare
 #####################################################################
 
-readonly PLAYBOOK_FILE=$(mktemp "${TEMP_NAME}")
+readonly PLAYBOOK_FILE="$(mktemp "${TEMP_NAME}")"
 trap "
   [ -e ${PLAYBOOK_FILE} ] && rm ${PLAYBOOK_FILE}
 " EXIT
@@ -85,7 +85,7 @@ trap "
 #####################################################################
 
 {
-  cat <<'EOF'
+  cat <<'  EOF'
 - name: setup hosts
   hosts: all
   gather_facts: no
@@ -96,12 +96,12 @@ trap "
     ansible.builtin.blockinfile:
       path: /etc/hosts
       block: |
-EOF
+  EOF
 
-  jq -c '.[]' "${HOST_LEDGER_FILE}" |
+  jq -c '.[]' "${HOST_LEDGER_FILE}"                                 |
   while read -r host; do
     host_name=$(echo "${host}" | jq -r '.name')
-    host_ip=$(echo "${host}"   | jq -r '.ip')
+    host_ip=$(echo "${host}" | jq -r '.ip')
 
     printf '        %s\t%s\n' "${host_ip}" "${host_name}"
   done
