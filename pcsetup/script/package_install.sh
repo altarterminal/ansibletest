@@ -8,12 +8,12 @@ set -eu
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
 Usage   : ${0##*/} <inventory file>
-Options : -p<package list> -j<package ledger> -d
+Options : -l<package list> -j<package ledger> -d
 
 Create accouts on <accout ledger> to hosts on <inventory>.
 If there has already been the account, nothing is done.
 
--p: Specify the package comma-seperated list (default: 'openssh-client').
+-l: Specify the comma-seperated package list (default: 'openssh-client').
 -d: enable dry run (default: disabled).
 USAGE
   exit 1
@@ -24,7 +24,7 @@ USAGE
 #####################################################################
 
 opr=''
-opt_p='openssh-client'
+opt_l='openssh-client'
 opt_j=''
 opt_d='no'
 
@@ -33,7 +33,7 @@ for arg in ${1+"$@"}
 do
   case "${arg}" in
     -h|--help|--version) print_usage_and_exit ;;
-    -p*)                 opt_p=${arg#-p}      ;;
+    -l*)                 opt_l=${arg#-l}      ;;
     -j*)                 opt_j=${arg#-j}      ;;
     -d)                  opt_d='yes'          ;;
     *)
@@ -75,7 +75,7 @@ if [ -n "${opt_j}" ]; then
   readonly INPUT_JSON_FILE="${opt_j}"
 else
   readonly IS_JSON='no'
-  readonly PACKAGE_LIST="${opt_p}"
+  readonly PACKAGE_LIST="${opt_l}"
 fi
 
 readonly DATE="$(date '+%Y%m%d_%H%M%S')"

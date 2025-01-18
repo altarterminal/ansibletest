@@ -8,7 +8,7 @@ set -eu
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
 Usage   : ${0##*/} <inventory file>
-Options : -u<user name> -i<user id> -j<json> -d
+Options : -u<user name> -i<user id> -j<account ledger> -d
 
 Create account on <inventory file>.
 

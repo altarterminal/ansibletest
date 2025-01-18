@@ -13,7 +13,7 @@ Options : -u<user name> -g<group list> -aj<account ledger> -tj<type ledger> -d
 Attach groups to accounts on <inventory file>.
 
 -u:  Specify the user name (default: <$(whoami)> = the user name who executes this).
--g:  Specifiy the group list (default: <$(id -nG | tr ' ' ',')> = the groups to which this user belongs to).
+-g:  Specify the group list (default: <$(id -nG | tr ' ' ',')> = the groups to which this user belongs to).
 -aj: Specify the json on which an array of user name and its type are defined. This is prioritized to -u and -g options.
 -tj: Specify the json on which an array of type name and its group are defined. This is prioritized to -u and -g options.
 -d:  Enable dry run (default: no).
