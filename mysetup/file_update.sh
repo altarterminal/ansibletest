@@ -10,13 +10,13 @@ print_usage_and_exit () {
 Usage   : ${0##*/} <target file> <inventory file>
 Options : -u<user name> -c<update cotent> -f<update file> -m<suffix marker> -d
 
-Update the file of <file path>
+Update the <target file path>.
 
--u: Specify the user name to manipulate (default: $(whoami)).
--c: Specify the file content to overwrite (default: <<empty>>).
+-u: Specify the user name to manipulate (default: <$(whoami)> = the user name who executes this).
+-c: Specify the file content to overwrite (default: "").
 -f: Specify the file path which includes the content to overwrite (This is prior to -c option if something is specified).
--m: Specify the suffix marker for ANSIBLE MANAGED BLOCK (default: none)
--d: Enable dry-run (= only output the playbook and not execute it) (default: disabled).
+-m: Specify the suffix marker for ANSIBLE MANAGED BLOCK (default: none).
+-d: Enable dry-run (default: disabled).
 USAGE
   exit 1
 }
@@ -71,7 +71,7 @@ if [ "${IS_DRYRUN}" = 'no' ]; then
     exit 1
   fi
 
-  readonly INVENTORY="${opr_i}"
+  readonly INVENTORY_FILE="${opr_i}"
 fi
 
 if [ -z "${opt_u}" ]; then
@@ -81,24 +81,25 @@ fi
 
 if [ -n "${opt_f}" ]; then
   if [ ! -f "${opt_f}" ] || [ ! -r "${opt_f}" ]; then
-    echo "ERROR:${0##*/}: invalid file specified" 1>&2
+    echo "ERROR:${0##*/}: invalid file specified <${opt_f}>" 1>&2
     exit 1
   fi
 
   readonly IS_FILE='yes'
-  readonly INPUT_FILE="${opt_f}"
+  readonly INPUT_CONTENT_FILE="${opt_f}"
 else
   readonly IS_FILE='no'
-  readonly INPUT_CONTENT=${opt_c}
+  readonly INPUT_CONTENT="${opt_c}"
 fi
 
 readonly TARGET_FILE="${opr_f}"
-readonly INVENTORY_FILE="${opr_i}"
 readonly USER_NAME="${opt_u}"
 readonly SUFFIX_MARKER="${opt_m}"
 
-readonly TEMP_PLAYBOOK_NAME="${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_playbook_XXXXXX"
-readonly TEMP_CONTENT_NAME="${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_content_XXXXXX"
+readonly DATE="$(date '+%Y%m%d_%H%M%S')"
+
+readonly TEMP_PLAYBOOK_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_playbook_XXXXXX"
+readonly TEMP_CONTENT_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_content_XXXXXX"
 
 #####################################################################
 # prepare
@@ -113,7 +114,7 @@ trap "
 " EXIT
 
 if [ "${IS_FILE}" = 'yes' ]; then
-  cat "${INPUT_FILE}" >"${CONTENT_FILE}"
+  cat "${INPUT_CONTENT_FILE}" >"${CONTENT_FILE}"
 else
   printf '%s\n' "${INPUT_CONTENT}" >"${CONTENT_FILE}"
 fi
@@ -122,13 +123,11 @@ fi
 # main routine
 #####################################################################
 
-{
-  cat <<'EOF'                                                       |
+cat <<'EOF'                                                         |
 - name: update file
   hosts: all
   gather_facts: no
   become: yes
-  become_user: <<user_name>>
   vars:
     user_name: <<user_name>>
   tasks:
@@ -160,22 +159,23 @@ fi
               <<input_content>>
           become_user: "{{ user_name }}" 
 EOF
-  sed 's#<<user_name>>#'"${USER_NAME}"'#'                           |
-  sed 's#<<target_file>>#'"${TARGET_FILE}"'#'                       |
-  sed 's#<<suffix_marker>>#'"${SUFFIX_MARKER}"'#'                   |
-  awk '
-    /<<input_content>>/ {
-      while ((getline < "'"${CONTENT_FILE}"'") > 0) {
-        printf "              %s\n", $0
-      }
-      next
+sed 's#<<user_name>>#'"${USER_NAME}"'#'                             |
+sed 's#<<target_file>>#'"${TARGET_FILE}"'#'                         |
+sed 's#<<suffix_marker>>#'"${SUFFIX_MARKER}"'#'                     |
+awk '
+  /<<input_content>>/ {
+    while ((getline < "'"${CONTENT_FILE}"'") > 0) {
+      printf "              %s\n", $0
     }
-    { print }
-  '
-} >"${PLAYBOOK_FILE}"
+    next
+  }
+  { print }
+'                                                                   |
+cat >"${PLAYBOOK_FILE}"
 
 if [ "${IS_DRYRUN}" = 'yes' ]; then
   cat "${PLAYBOOK_FILE}"
 else
-  ANSIBLE_PIPELINING=1 ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}"
+  ANSIBLE_PIPELINING=1 \
+  ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}"
 fi
