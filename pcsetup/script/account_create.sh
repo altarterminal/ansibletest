@@ -75,7 +75,7 @@ if [ -n "${opt_j}" ]; then
   fi
 
   readonly IS_JSON='yes'
-  readonly JSON_FILE="${opt_j}"
+  readonly INPUT_JSON_FILE="${opt_j}"
 else
   readonly IS_JSON='no'
   readonly USER_NAME="${opt_u}"
@@ -94,26 +94,26 @@ readonly TEMP_JSON_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_json_XXXXXX"
 
 readonly PLAYBOOK_IF_FILE="$(mktemp "${TEMP_IF_NAME}")"
 readonly PLAYBOOK_BODY_FILE="$(mktemp "${TEMP_BODY_NAME}")"
-readonly JSON_MIDDLE_FILE="$(mktemp "${TEMP_JSON_NAME}")"
+readonly JSON_FILE="$(mktemp "${TEMP_JSON_NAME}")"
 
 trap "
   [ -e ${PLAYBOOK_IF_FILE} ]   && rm ${PLAYBOOK_IF_FILE}
   [ -e ${PLAYBOOK_BODY_FILE} ] && rm ${PLAYBOOK_BODY_FILE}
-  [ -e ${JSON_MIDDLE_FILE} ]   && rm ${JSON_MIDDLE_FILE}
+  [ -e ${JSON_FILE} ]          && rm ${JSON_FILE}
 " EXIT
 
 if [ "${IS_JSON}" = 'yes' ]; then
-  cat "${JSON_FILE}" >"${JSON_MIDDLE_FILE}"
+  cat "${INPUT_JSON_FILE}" >"${JSON_FILE}"
 else
   printf '[{"name":"%s","id":"%s"}]\n' "${USER_NAME}" "${USER_ID}"  |
-  cat >"${JSON_MIDDLE_FILE}"
+  cat >"${JSON_FILE}"
 fi
 
 #####################################################################
 # check
 #####################################################################
 
-jq -cr '.[]' "${JSON_MIDDLE_FILE}"                                  |
+jq -cr '.[]' "${JSON_FILE}"                                         |
 while read -r line;
 do
   name=$(echo "${line}" | jq -r '.name // empty')
@@ -148,7 +148,7 @@ awk ' END { if(NR != 0) { exit 1; } } '
   EOF
   sed 's!<<playbook_body_file>>!'"${PLAYBOOK_BODY_FILE}"'!'
 
-  jq -c '.[]' "${JSON_MIDDLE_FILE}"                                 |
+  jq -c '.[]' "${JSON_FILE}"                                        |
   while read -r line;
   do
     user_name=$(echo "${line}" | jq -r '.name')

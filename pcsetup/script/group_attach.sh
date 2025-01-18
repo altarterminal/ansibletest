@@ -83,8 +83,8 @@ if [ -n "${opt_aj}" ] || [ -n "${opt_tj}" ]; then
   fi
 
   readonly IS_JSON='yes'
-  readonly JSON_ACCOUNT_FILE="${opt_aj}"
-  readonly JSON_TYPE_FILE="${opt_tj}"
+  readonly INPUT_JSON_ACCOUNT_FILE="${opt_aj}"
+  readonly INPUT_JSON_TYPE_FILE="${opt_tj}"
 else
   readonly IS_JSON='no'
   readonly USER_NAME="${opt_u}"
@@ -104,30 +104,30 @@ readonly TEMP_JSON_TYPE_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_json_type_XXXXXX"
 
 readonly PLAYBOOK_IF_FILE="$(mktemp "${TEMP_IF_NAME}")"
 readonly PLAYBOOK_BODY_FILE="$(mktemp "${TEMP_BODY_NAME}")"
-readonly JSON_ACCOUNT_MIDDLE_FILE="$(mktemp "${TEMP_JSON_ACCOUNT_NAME}")"
-readonly JSON_TYPE_MIDDLE_FILE="$(mktemp "${TEMP_JSON_TYPE_NAME}")"
+readonly JSON_ACCOUNT_FILE="$(mktemp "${TEMP_JSON_ACCOUNT_NAME}")"
+readonly JSON_TYPE_FILE="$(mktemp "${TEMP_JSON_TYPE_NAME}")"
 
 trap "
-  [ -e ${PLAYBOOK_IF_FILE} ] && rm ${PLAYBOOK_IF_FILE}
+  [ -e ${PLAYBOOK_IF_FILE} ]   && rm ${PLAYBOOK_IF_FILE}
   [ -e ${PLAYBOOK_BODY_FILE} ] && rm ${PLAYBOOK_BODY_FILE}
-  [ -e ${JSON_ACCOUNT_MIDDLE_FILE} ] && rm ${JSON_ACCOUNT_MIDDLE_FILE}
-  [ -e ${JSON_TYPE_MIDDLE_FILE} ] && rm ${JSON_TYPE_MIDDLE_FILE}
+  [ -e ${JSON_ACCOUNT_FILE} ]  && rm ${JSON_ACCOUNT_FILE}
+  [ -e ${JSON_TYPE_FILE} ]     && rm ${JSON_TYPE_FILE}
 " EXIT
 
 if [ "${IS_JSON}" = 'yes' ]; then
-  cat "${JSON_ACCOUNT_FILE}" >"${JSON_ACCOUNT_MIDDLE_FILE}"
-  cat "${JSON_TYPE_FILE}" >"${JSON_TYPE_MIDDLE_FILE}"
+  cat "${INPUT_JSON_ACCOUNT_FILE}" >"${JSON_ACCOUNT_FILE}"
+  cat "${INPUT_JSON_TYPE_FILE}" >"${JSON_TYPE_FILE}"
 else
   GROUP_NAMES_ESC=$(echo "${GROUP_NAMES}" |
     sed 's!^!"!' | sed 's!$!"!' | sed 's!,!","!g')
 
   printf '[{"name":"%s","type":"%s"}]\n'                            \
     "${USER_NAME}" 'tmptype'                                        |
-  cat >"${JSON_ACCOUNT_MIDDLE_FILE}"
+  cat >"${JSON_ACCOUNT_FILE}"
 
   printf '[{"name":"%s","group":[%s]}]\n'                           \
     'tmptype' "${GROUP_NAMES_ESC}"                                  |
-  cat >"${JSON_TYPE_MIDDLE_FILE}"
+  cat >"${JSON_TYPE_FILE}"
 fi
 
 #####################################################################
@@ -148,7 +148,7 @@ fi
   EOF
   cat
 
-  jq -r '.[].group' "${JSON_TYPE_MIDDLE_FILE}"                      |
+  jq -r '.[].group' "${JSON_TYPE_FILE}"                             |
   while read -r line; do echo "${line}" | jq -r '.[]'; done         |
   sort                                                              |
   uniq                                                              |
@@ -161,13 +161,13 @@ fi
   EOF
   sed 's!<<playbook_body_file>>!'"${PLAYBOOK_BODY_FILE}"'!'
 
-  jq -c '.[]' "${JSON_ACCOUNT_MIDDLE_FILE}"                         |
+  jq -c '.[]' "${JSON_ACCOUNT_FILE}"                                |
   while read -r line;
   do
     user_name=$(echo "${line}" | jq -r '.name')
     user_type=$(echo "${line}" | jq -r '.type')
 
-    group_list=$(cat "${JSON_TYPE_MIDDLE_FILE}"                     |
+    group_list=$(cat "${JSON_TYPE_FILE}"                            |
       jq '.[] | select(.name=="'"${user_type}"'")'                  |
       jq -r '.group[]'                                              |
       tr '\n' ','                                                   |
