@@ -12,10 +12,10 @@ Options : -u<user name> -k<key path> -j<host ledger> -d
 
 Setup public key login.
 
--u: Specify the user name (default: $(whoami) = the user name who executes this)
--k: Specify the key path (default: ${HOME}/.ssh/id_rsa)
--j: Specify the json file on which hostname and its ip address are for login target (default: ./host_ledger.json)
--d: Enable dry-run (= only output the playbook and not execute it) (default: disabled)
+-u: Specify the user name (default: <$(whoami)> = the user name who executes this).
+-k: Specify the key path (default: ${HOME}/.ssh/id_rsa).
+-j: Specify the json file on which hostname and its ip address are for login target (default: ./host_ledger.json).
+-d: Enable dry-run (default: disabled).
 USAGE
   exit 1
 }
@@ -65,7 +65,7 @@ if [ "${IS_DRYRUN}" = 'no' ]; then
     exit 1
   fi
 
-  readonly INVENTORY="${opr}"
+  readonly INVENTORY_FILE="${opr}"
 fi
 
 if [ -z "${opt_u}" ]; then
@@ -80,7 +80,7 @@ if [ ! -f "${opt_k%.pub}" ]     || [ ! -r "${opt_k%.pub}" ] ||
 fi
 
 if [ ! -f "${opt_j}" ] || [ ! -r "${opt_j}" ]; then
-  echo "ERROR:${0##*/}: invalid host ledger specified <${opt_j}>" 1>&2
+  echo "ERROR:${0##*/}: invalid ledger specified <${opt_j}>" 1>&2
   exit 1
 fi
 
@@ -94,8 +94,8 @@ readonly TEMP_NAME="${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX"
 # prepare
 #####################################################################
 
-readonly PLAYBOOK="$(mktemp "${TEMP_NAME}")"
-trap "[ -e ${PLAYBOOK} ] && rm ${PLAYBOOK}" EXIT
+readonly PLAYBOOK_FILE="$(mktemp "${TEMP_NAME}")"
+trap "[ -e ${PLAYBOOK_FILE} ] && rm ${PLAYBOOK_FILE}" EXIT
 
 #####################################################################
 # main routine
@@ -125,7 +125,7 @@ cat <<'EOF'                                                         |
           register: get_result
           become_user: "{{ user_name }}"
 
-        - name: set home directory parameter
+        - name: set parameter
           ansible.builtin.set_fact:
             ssh_dir: "{{ get_result.stdout }}/.ssh"
             ssh_key_file: "{{ get_result.stdout }}/.ssh/{{ secret_key | basename }}"
@@ -224,11 +224,11 @@ awk '
 }
 { print }'                                                          |
 
-cat >"${PLAYBOOK}"
+cat >"${PLAYBOOK_FILE}"
 
 if [ "${IS_DRYRUN}" = 'yes' ]; then
-  cat "${PLAYBOOK}"
+  cat "${PLAYBOOK_FILE}"
 else
-  ANSIBLE_SHELL_ALLOW_WORLD_READABLE_TEMP=1 ANSIBLE_PIPELINING=1 \
-  ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}"
+  ANSIBLE_SHELL_ALLOW_WORLD_READABLE_TEMP=1 ANSIBLE_PIPELINING=1    \
+  ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}"
 fi
