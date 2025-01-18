@@ -12,9 +12,8 @@ Options : -u<user name> -d
 
 Change the password.
 
--u: specify the user name (default: $(whoami) = the user name who executes this)
--i: specify the id for uid and gid if the user is newly created (default: $(id -u) = the uid of who executes this)
--d: enable dry-run (= only output the playbook and not execute it) (default: disabled)
+-u: Specify the user name (default: <$(whoami)> = the user name who executes this).
+-d: Enable dry-run (default: disabled).
 USAGE
   exit 1
 }
@@ -49,7 +48,7 @@ do
   i=$((i + 1))
 done
 
-readonly IS_DRYRUN=${opt_d}
+readonly IS_DRYRUN="${opt_d}"
 
 if [ "${IS_DRYRUN}" = 'no' ]; then
   if ! type ansible-playbook >/dev/null 2>&1; then
@@ -62,7 +61,7 @@ if [ "${IS_DRYRUN}" = 'no' ]; then
     exit 1
   fi
 
-  readonly INVENTORY="${opr}"
+  readonly INVENTORY_FILE="${opr}"
 fi
 
 if [ -z "${opt_u}" ]; then
@@ -76,6 +75,7 @@ if ! printf '%s\n' "${opt_i}" | grep -Eq '^[0-9]+$'; then
 fi
 
 readonly USER_NAME="${opt_u}"
+
 readonly TEMP_NAME="${TMPDIR:-/tmp}/${0##*/}_$(date '+%Y%m%d_%H%M%S')_XXXXXX"
 
 #####################################################################
@@ -89,7 +89,8 @@ if [ "${IS_DRYRUN}" = 'yes' ]; then
   readonly PASSWORD='this-is-password'
 else
   stty -echo
-  while true; do
+  while true
+  do
     printf 'new password > '; read -r first_pass; echo ""
     if [ -z "${first_pass}" ]; then
       echo "${0##*/}: empty password not permitted" 1>&2
@@ -142,5 +143,5 @@ cat >"${PLAYBOOK}"
 if [ "${IS_DRYRUN}" = 'yes' ]; then
   cat "${PLAYBOOK}"
 else
-  ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}"
+  ansible-playbook -i "${INVENTORY_FILE}" "${PLAYBOOK}"
 fi
