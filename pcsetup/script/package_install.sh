@@ -14,7 +14,7 @@ Create accouts on <accout ledger> to hosts on <inventory>.
 If there has already been the account, nothing is done.
 
 -l: Specify the comma-seperated package list (default: 'openssh-client').
--d: enable dry run (default: disabled).
+-d: Enable dry run (default: disabled).
 USAGE
   exit 1
 }
