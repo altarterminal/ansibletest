@@ -116,7 +116,7 @@ trap "
 if [ "${IS_FILE}" = 'yes' ]; then
   cat "${INPUT_CONTENT_FILE}" >"${CONTENT_FILE}"
 else
-  printf '%s\n' "${INPUT_CONTENT}" >"${CONTENT_FILE}"
+  printf "${INPUT_CONTENT}"'\n' >"${CONTENT_FILE}"
 fi
 
 #####################################################################
@@ -154,7 +154,7 @@ cat <<'EOF'                                                         |
           ansible.builtin.blockinfile:
             path: "{{ target_file }}"
             create: true
-            marker: # {mark} ANSIBLE MANAGED BLOCK <<suffix_marker>>
+            marker: "# {mark} ANSIBLE MANAGED BLOCK <<suffix_marker>>"
             block: |
               <<input_content>>
           become_user: "{{ user_name }}" 
