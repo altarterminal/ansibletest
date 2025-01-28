@@ -1,5 +1,5 @@
 #!/bin/sh
-set -u
+set -eu
 
 #####################################################################
 # help
@@ -8,9 +8,9 @@ set -u
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
 Usage   : ${0##*/} <inventory file>
-Options :
+Options : -b
 
-Execute command on hosts on <inventory file>
+List hosts from <inventory file> which are unreachable.
 USAGE
   exit 1
 }
@@ -24,10 +24,10 @@ opr=''
 i=1
 for arg in ${1+"$@"}
 do
-  case "${arg}" in
+  case "$arg" in
     -h|--help|--version) print_usage_and_exit ;;
     *)
-      if [ $i -eq $# ] && [ -z "${opr}" ]; then
+      if [ $i -eq $# ] && [ -z "$opr" ]; then
         opr="${arg}"
       else
         echo "ERROR:${0##*/}: invalid args" 1>&2
@@ -39,6 +39,11 @@ do
   i=$((i + 1))
 done
 
+if ! type ansible >/dev/null 2>&1; then
+  echo "ERROR:${0##*/}: ansible comannd not found" 1>&2
+  exit 1
+fi
+
 if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
   echo "ERROR:${0##*/}: invalid file specified <${opr}>" 1>&2
   exit 1
@@ -46,19 +51,22 @@ fi
 
 readonly INVENTORY_FILE="${opr}"
 
-readonly THIS_DIR=$(dirname $0)
-
 #####################################################################
 # main routine
 #####################################################################
 
-while true
-do
-  printf 'execute command ("q" for quit) > '
-  read -r cmd
+ansible -i "${INVENTORY_FILE}" all -m ping                          |
 
-  case "${cmd}" in
-    q) exit 0 ;;
-    *) "${THIS_DIR}/exec_command_body.sh" "${INVENTORY_FILE}" "${cmd}" ;;
-  esac
+sed 's#^\([^ ]*\) | SUCCESS => {#{"hostname":"\1","result":"OK",#'  |
+sed 's#^\([^ ]*\) | [^ ]* => {#{"hostname":"\1","result":"NG",#'    |
+
+jq -c .                                                             |
+while read -r line
+do
+  hostname=$(echo "${line}" | jq -r '.hostname')
+  result=$(echo "${line}"   | jq -r '.result')
+
+  if [ "${result}" = 'NG' ]; then
+    echo "${hostname}"
+  fi
 done

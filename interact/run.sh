@@ -7,12 +7,10 @@ set -eu
 
 print_usage_and_exit () {
 cat <<-USAGE 1>&2
-Usage   : ${0##*/} -i<inventory file>
+Usage   : ${0##*/} <host ledger>
 Options :
 
-execute command on multiple hosts on <inventory>
-
--i: specify the initial inventory file
+Execute command on multiple hosts on <host ledger>
 USAGE
   exit 1
 }
@@ -22,19 +20,17 @@ USAGE
 #####################################################################
 
 opr=''
-opt_i=''
 
 i=1
 for arg in ${1+"$@"}
 do
   case "$arg" in
     -h|--help|--version) print_usage_and_exit ;;
-    -i*)                 opt_i=${arg#-i}      ;; 
     *)
       if [ $i -eq $# ] && [ -z "$opr" ]; then
-        opr=$arg
+        opr="${arg}"
       else
-        echo "${0##*/}: invalid args" 1>&2
+        echo "ERROR:${0##*/}: invalid args" 1>&2
         exit 1
       fi
       ;;
@@ -44,30 +40,36 @@ do
 done
 
 if ! type ansible-playbook >/dev/null 2>&1; then
-  echo "${0##*/}: ansible-playbook comannd cannot be found" 1>&2
+  echo "ERROR:${0##*/}: ansible command not found" 1>&2
   exit 1
 fi
 
-if [ ! -f "${opt_i}" ] || [ ! -r "${opt_i}" ]; then
-  echo "${0##*/}: <${opt_i}> cannot be accessed for inventory" 1>&2
+if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
+  echo "ERROR:${0##*/}: invalid file speicified <${opr}>" 1>&2
   exit 1
 fi
 
-readonly ORG_INVENTORY_FILE=${opt_i}
-readonly NOW_DATE=$(date '+%Y%m%d%H%M%S')
-readonly TEMPLATE_NAME=${TMP:-/tmp}/${0##*/}_${NOW_DATE}.XXXXXX.ini
+# original ledger is not modified
+readonly ORG_LEDGER_FILE="${opr}"
 
-readonly TOP_DIR=$(dirname $0)
+readonly TOP_DIR="$(dirname "$0")"
+
+readonly NOW_DATE="$(date '+%Y%m%d%H%M%S')"
+readonly LEDGER_NAME="${TMPDIR:-/tmp}/${0##*/}_${NOW_DATE}_ledger_XXXXXX"
+readonly INVENTORY_NAME="${TMPDIR:-/tmp}/${0##*/}_${NOW_DATE}_inventory_XXXXXX"
 
 #####################################################################
 # prepare
 #####################################################################
 
-# inventory is tmporarily made for this system and 
-# the original should not change
-readonly INVENTORY_FILE=$(mktemp "${TEMPLATE_NAME}")
-trap "[ -e ${INVENTORY_FILE} ] && rm ${INVENTORY_FILE}" EXIT
-cp "${ORG_INVENTORY_FILE}" "${INVENTORY_FILE}"
+readonly LEDGER_FILE="$(mktemp "${LEDGER_NAME}")"
+readonly INVENTORY_FILE="$(mktemp "${INVENTORY_NAME}")"
+trap "
+  [ -e ${LEDGER_FILE} ]    && rm ${LEDGER_FILE};
+  [ -e ${INVENTORY_FILE} ] && rm ${INVENTORY_FILE};
+" EXIT
+
+cat "${ORG_LEDGER_FILE}" >"${LEDGER_FILE}"
 
 #####################################################################
 # unitility
@@ -76,8 +78,11 @@ cp "${ORG_INVENTORY_FILE}" "${INVENTORY_FILE}"
 print_menu () {
 cat <<'EOF'
 h: print this menu
-r: remove the unreachable host from inventory
+r: invalidate unreachable host
+p: print host information
+e: edit host validity
 c: execute shell command
+w: overwrite ledger file
 q: quit
 EOF
 }
@@ -88,13 +93,26 @@ EOF
 
 while true
 do
-  printf '%s' 'menu ("h" for help) > '
+  printf 'menu ("h" for help) > '
   read -r cmd
 
   case "${cmd}" in
     h) print_menu ;;
-    r) "${TOP_DIR}/remove_unreachhosts.sh" "${INVENTORY_FILE}" ;;
-    c) "${TOP_DIR}/exec_command_if.sh" "${INVENTORY_FILE}" ;;
+    p)
+      jq . "${LEDGER_FILE}"
+      ;;
+    r)
+      "${TOP_DIR}/make_inventory.sh" "${LEDGER_FILE}" >"${INVENTORY_FILE}"
+      unreachs=$("${TOP_DIR}/find_unreach.sh" "${INVENTORY_FILE}" | tr '\n' ',')
+      "${TOP_DIR}/batch_ledger.sh" -k'name' -l"${unreachs}" "${LEDGER_FILE}"
+      ;;
+    e)
+      "${TOP_DIR}/edit_ledger.sh" "${LEDGER_FILE}"
+      ;;
+    c)
+      "${TOP_DIR}/make_inventory.sh" "${LEDGER_FILE}" >"${INVENTORY_FILE}"
+      "${TOP_DIR}/exec_command_if.sh" "${INVENTORY_FILE}"
+      ;;
     q) exit 0 ;;
     *) ;;
   esac
