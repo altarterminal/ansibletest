@@ -1,0 +1,64 @@
+- name: install jenkins main process
+  hosts: all
+  gather_facts: no
+  become: yes
+  environment:
+    http_proxy:  "{{ proxy_setting }}"
+    https_proxy: "{{ proxy_setting }}"
+  vars:
+    gpg_url: "https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key"
+    gpg_path: "/etc/apt/keyrings/jenkins.gpg"
+    download_url: "https://pkg.jenkins.io/debian-stable"
+    list_path: "/etc/apt/sources.list.d/jenkins.list"
+    jenkins_ver: "2.479.3"
+  tasks:
+    - name: gather date and time
+      setup:
+        gather_subset:
+          - "date_time"
+      when: ansible_date_time is not defined
+
+    - name: set variable
+      ansible.builtin.set_fact:
+        tmp_path: "/tmp/tmp_gpg_{{ ansible_date_time.date }}"
+
+    - name: download tmp gpg
+      ansible.builtin.get_url:
+        url: "{{ gpg_url }}"
+        dest: "{{ tmp_path }}"
+        use_proxy: "{{ 'true' if proxy_setting != '' else 'false' }}"
+
+    - name: prepare gpg directory
+      ansible.builtin.file:
+        path: "{{ gpg_path | dirname }}"
+        owner: root
+        group: root
+        mode: "0755"
+        state: directory
+
+    - name: delete old gpg (cannot skip this)
+      ansible.builtin.file:
+        path: "{{ gpg_path }}"
+        state: absent
+
+    - name: register external repository
+      ansible.builtin.shell: |
+        gpg --dearmor -o "{{ gpg_path }}" < "{{ tmp_path }}"
+        printf 'deb [arch=%s signed-by=%s] %s binary/ '    \
+          "$(dpkg --print-architecture)" "{{ gpg_path }}"  \
+          "{{ download_url }}"                             |
+        tee "{{ list_path }}" >/dev/null
+
+    - name: delete tmp gpg
+      ansible.builtin.file:
+        path: "{{ tmp_path }}"
+        state: absent
+
+    - name: install the specific version
+      ansible.builtin.apt:
+        update_cache: yes
+        name:
+          - jenkins={{ jenkins_ver }}
+
+    - name: hold the version
+      ansible.builtin.shell: apt-mark hold jenkins

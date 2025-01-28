@@ -1,0 +1,19 @@
+- name: install jenkins pre process
+  hosts: all
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: install dependency
+      apt:
+        name: 
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          - openjdk-17-jre
+
+    - name: remove existing software
+      apt:
+        name:
+          - jenkins
+        autoremove: yes
+        state: absent
