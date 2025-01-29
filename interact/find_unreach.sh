@@ -8,9 +8,11 @@ set -eu
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
 Usage   : ${0##*/} <inventory file>
-Options : -b
+Options : -c
 
 List hosts from <inventory file> which are unreachable.
+
+-c: Enable the output in form of comma-seperated list.
 USAGE
   exit 1
 }
@@ -20,12 +22,14 @@ USAGE
 #####################################################################
 
 opr=''
+opt_c='no'
 
 i=1
 for arg in ${1+"$@"}
 do
   case "$arg" in
     -h|--help|--version) print_usage_and_exit ;;
+    -c)                  opt_c='yes'          ;;
     *)
       if [ $i -eq $# ] && [ -z "$opr" ]; then
         opr="${arg}"
@@ -50,6 +54,7 @@ if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
 fi
 
 readonly INVENTORY_FILE="${opr}"
+readonly IS_COMMA="${opt_c}"
 
 #####################################################################
 # main routine
@@ -69,4 +74,12 @@ do
   if [ "${result}" = 'NG' ]; then
     echo "${hostname}"
   fi
-done
+done                                                                |
+
+if [ "${IS_COMMA}" = 'yes' ]; then
+  tr '\n' ','                                                       |
+  sed 's/,$//'                                                      |
+  grep ^
+else
+  cat
+fi

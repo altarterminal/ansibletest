@@ -110,7 +110,7 @@ do
       ;;
     r)
       "${TOP_DIR}/make_inventory.sh" "${LEDGER_FILE}" >"${INVENTORY_FILE}"
-      unreachs=$("${TOP_DIR}/find_unreach.sh" "${INVENTORY_FILE}" | tr '\n' ',')
+      unreachs=$("${TOP_DIR}/find_unreach.sh" -c "${INVENTORY_FILE}")
       "${TOP_DIR}/batch_ledger.sh" -k'name' -l"${unreachs}" "${LEDGER_FILE}"
       ;;
     e)

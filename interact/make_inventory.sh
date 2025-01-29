@@ -66,7 +66,7 @@ jq -c '.[]' "${HOST_LEDGER}"                                        |
 while read -r host; do
   host_validity=$(echo "${host}" | jq -r '.validity // empty')
 
-  if [ "${host_validity}" != 'true' ]; then
+  if [ "${host_validity}" != 'true' ] && [ "${host_validity}" != '' ]; then
     continue
   fi
 
