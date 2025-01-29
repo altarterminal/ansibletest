@@ -71,7 +71,7 @@ readonly COMMAND_STRING="${opr_c}"
 readonly USER_NAME="${opt_u}"
 
 readonly NOW_DATE=$(date '+%Y%m%d%H%M%S')
-readonly TEMPLATE_NAME="${TMP:-/tmp}/${0##*/}_${NOW_DATE}_XXXXXX"
+readonly TEMPLATE_NAME="${TMPDIR:-/tmp}/${0##*/}_${NOW_DATE}_XXXXXX"
 
 #####################################################################
 # prepare
@@ -120,26 +120,35 @@ ansible-playbook -v -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}"       |
 sed -n '/^TASK \[execute\]/,/^$/p'                                  |
 sed '1d;$d'                                                         |
 
-sed 's/^.*: \[\(.*\)\] => \(.*\)/{"hostname":"\1","result":"OK","state":\2}/'                      |
-sed 's/^fatal: \[\(.*\)\]: \(FAILED\)! => \(.*\)/{"hostname":"\1","result":"\2","state":\3}/'      |
-sed 's/^fatal: \[\(.*\)\]: \(UNREACHABLE\)! => \(.*\)/{"hostname":"\1","result":"\2","state":\3}/' |
+sed 's/^.*: \[\(.*\)\] => \(.*\)/{"hostname":"\1","result":"OK","state":\2}/'                 |
+sed 's/^fatal: \[\(.*\)\]: \([A-Z]*\)! => \(.*\)/{"hostname":"\1","result":"\2","state":\3}/' |
+
+# sort by hostname
+jq -s .                                                             |
+jq '. | sort_by(.hostname)'                                         |
+jq -c '.[]'                                                         |
 
 while read -r line
 do
   hostname=$(printf '%s' "${line}" | jq -r '.hostname')
   result=$(printf '%s' "${line}"   | jq -r '.result')
 
-  if    [ "${result}" = 'OK' ]; then
-    printf '%s\n' "${line}" | jq '.state.stdout' | xargs printf | grep ^ | sed 's!^!'"${hostname}"'<M>stdout<T>!'
-    printf '%s\n' "${line}" | jq '.state.stderr' | xargs printf | grep ^ | sed 's!^!'"${hostname}"'<M>stderr<T>!'
-    printf '%s\n' "${line}" | jq '.state.rc'     | xargs printf | grep ^ | sed 's!^!'"${hostname}"'<M>rtcode<T>!'
-   elif [ "${result}" = 'FAILED' ]; then
-    printf '%s\n' "${line}" | jq '.state.stdout' | xargs printf | grep ^ | sed 's!^!'"${hostname}"'<M>stdout<T>!'
-    printf '%s\n' "${line}" | jq '.state.stderr' | xargs printf | grep ^ | sed 's!^!'"${hostname}"'<M>stderr<T>!'
-    printf '%s\n' "${line}" | jq '.state.rc'     | xargs printf | grep ^ | sed 's!^!'"${hostname}"'<M>rtcode<T>!'
-  elif  [ "${result}" = 'UNREACHABLE' ]; then
-    printf '%s\n' '""'                           | xargs printf | grep ^ | sed 's!^!'"${hostname}"'<M>stdout<T>!'
-    printf '%s\n' "${line}" | jq '.state.msg'    | xargs printf | grep ^ | sed 's!^!'"${hostname}"'<M>stderr<T>!'
-    printf '%s\n' '255'                          | xargs printf | grep ^ | sed 's!^!'"${hostname}"'<M>rtcode<T>!'
+  if   [ "${result}" = 'OK' ] || [ "${result}" = 'FAILED' ] ; then
+    stdout_line="$(printf '%s\n' "${line}" | jq -r '.state.stdout')"
+    stderr_line="$(printf '%s\n' "${line}" | jq -r '.state.stderr')"
+    rtcode_line="$(printf '%s\n' "${line}" | jq -r '.state.rc')"
+  elif [ "${result}" = 'UNREACHABLE' ]; then
+    stdout_line=''
+    stderr_line="$(printf '%s\n' "${line}" | jq -r '.state.msg')"
+    rtcode_line='255'
+  else
+    echo "ERROR:${0##*/}: unexpected pattern <${result}> (but continues process)" 1>&2
   fi
+
+  {
+    printf "${stdout_line:-\n}" | grep ^ | sed 's!^!stdout<T>!'
+    printf "${stderr_line:-\n}" | grep ^ | sed 's!^!stderr<T>!'
+    printf "${rtcode_line:-\n}" | grep ^ | sed 's!^!rtcode<T>!'
+  }                                                                 |
+  sed 's!^!'"${hostname}"'<M>!'
 done
