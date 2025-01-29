@@ -44,6 +44,11 @@ if ! type ansible-playbook >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! type jq >/dev/null 2>&1; then
+  echo "ERROR:${0##*/}: jq command not found" 1>&2
+  exit 1
+fi
+
 if [ ! -f "${opr}" ] || [ ! -r "${opr}" ]; then
   echo "ERROR:${0##*/}: invalid file speicified <${opr}>" 1>&2
   exit 1
@@ -69,7 +74,10 @@ trap "
   [ -e ${INVENTORY_FILE} ] && rm ${INVENTORY_FILE};
 " EXIT
 
-cat "${ORG_LEDGER_FILE}" >"${LEDGER_FILE}"
+cat "${ORG_LEDGER_FILE}"                                            |
+jq '.[] | . += {"validity":true}'                                   |
+jq -s .                                                             |
+cat >"${LEDGER_FILE}"
 
 #####################################################################
 # unitility
@@ -78,11 +86,10 @@ cat "${ORG_LEDGER_FILE}" >"${LEDGER_FILE}"
 print_menu () {
 cat <<'EOF'
 h: print this menu
-r: invalidate unreachable host
 p: print host information
+r: invalidate unreachable host
 e: edit host validity
 c: execute shell command
-w: overwrite ledger file
 q: quit
 EOF
 }
@@ -113,7 +120,10 @@ do
       "${TOP_DIR}/make_inventory.sh" "${LEDGER_FILE}" >"${INVENTORY_FILE}"
       "${TOP_DIR}/exec_command_if.sh" "${INVENTORY_FILE}"
       ;;
-    q) exit 0 ;;
-    *) ;;
+    q)
+      exit
+      ;;
+    *)
+      ;;
   esac
 done
