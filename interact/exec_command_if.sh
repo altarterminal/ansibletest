@@ -59,6 +59,6 @@ do
 
   case "${cmd}" in
     q) exit 0 ;;
-    *) "${THIS_DIR}/exec_command_body.sh" "${INVENTORY_FILE}" "${cmd}" ;;
+    *) "${THIS_DIR}/exec_command.sh" "${INVENTORY_FILE}" "${cmd}" ;;
   esac
 done
