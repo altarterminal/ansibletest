@@ -80,6 +80,9 @@ readonly TEMPLATE_NAME="${TMPDIR:-/tmp}/${0##*/}_${NOW_DATE}_XXXXXX"
 readonly PLAYBOOK_FILE="$(mktemp "${TEMPLATE_NAME}")"
 trap "[ -e ${PLAYBOOK_FILE} ] && rm ${PLAYBOOK_FILE}" EXIT
 
+NEW_LINE="$(printf '\n_')"
+readonly NEW_LINE="${NEWLINE%_}"
+
 #####################################################################
 # main routine
 #####################################################################
@@ -142,13 +145,17 @@ do
     stderr_line="$(printf '%s\n' "${line}" | jq -r '.state.msg')"
     rtcode_line='255'
   else
-    echo "ERROR:${0##*/}: unexpected pattern <${result}> (but continues process)" 1>&2
+    echo "ERROR:${0##*/}: unexpected result <${result}> (skip)" 1>&2
+    continue
   fi
 
+  if [ -z "${stdout_line}" ]; then stdout_line="${NEW_LINE}"; fi
+  if [ -z "${stderr_line}" ]; then stderr_line="${NEW_LINE}"; fi
+
   {
-    printf "${stdout_line:-\n}" | grep ^ | sed 's!^!stdout<T>!'
-    printf "${stderr_line:-\n}" | grep ^ | sed 's!^!stderr<T>!'
-    printf "${rtcode_line:-\n}" | grep ^ | sed 's!^!rtcode<T>!'
+    printf '%s\n' "${stdout_line}" | grep ^ | sed 's!^!stdout<T>!'
+    printf '%s\n' "${stderr_line}" | grep ^ | sed 's!^!stderr<T>!'
+    printf '%s\n' "${rtcode_line}" | grep ^ | sed 's!^!rtcode<T>!'
   }                                                                 |
   sed 's!^!'"${hostname}"'<M>!'
 done
