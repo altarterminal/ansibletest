@@ -1,5 +1,5 @@
 #!/bin/sh
-set -u
+set -eu
 
 #####################################################################
 # help
@@ -8,11 +8,17 @@ set -u
 print_usage_and_exit () {
   cat <<-USAGE 1>&2
 Usage   : ${0##*/} <inventory file> <command>
-Options : -u<user name>
+Options : -u<user name> -so -se -rc
 
 Execute <command> on hosts on <inventory file>.
 
--u: Specify the user name to execute command (default: <$(whoami)> = who executes this).
+-u:  Specify the user name to execute command (default: <$(whoami)> = who executes this).
+-so: Enable the output of standard out (default: enabled).
+-se: Enable the output of standard error (default: enabled).
+-rc: Enable the output of return code as number (default: enabled).
+
+Note.
+  If all of -so, -se and -rc are NOT specified, all of them are enabled automaticaly.
 USAGE
   exit 1
 }
@@ -24,13 +30,19 @@ USAGE
 opr_i=''
 opr_c=''
 opt_u="$(whoami)"
+opt_so='no'
+opt_se='no'
+opt_rc='no'
 
 i=1
 for arg in ${1+"$@"}
 do
   case "${arg}" in
     -h|--help|--version) print_usage_and_exit ;;
-    -u*)                 opt_u=${arg#-u}      ;;
+    -u*)                 opt_u="${arg#-u}"    ;;
+    -so)                 opt_so='yes'         ;;
+    -se)                 opt_se='yes'         ;;
+    -rc)                 opt_rc='yes'         ;;
     *)
       if [ $i -eq $(($# - 1)) ] && [ -z "${opr_i}" ]; then
         opr_i="${arg}"
@@ -64,6 +76,16 @@ fi
 if [ -z "${opr_c}" ]; then
   echo "ERROR:${0##*/}: command must be specified" 1>&2
   exit 1
+fi
+
+if [ "${opt_so}" = 'no' ] && [ "${opt_se}" = 'no' ] && [ "${opt_rc}" = 'no' ]; then
+  readonly IS_STDOUT='yes'
+  readonly IS_STDERR='yes'
+  readonly IS_RTCODE='yes'
+else
+  readonly IS_STDOUT="${opt_so}"
+  readonly IS_STDERR="${opt_se}"
+  readonly IS_RTCODE="${opt_rc}"
 fi
 
 readonly INVENTORY_FILE="${opr_i}"
@@ -153,9 +175,15 @@ do
   if [ -z "${stderr_line}" ]; then stderr_line="${NEW_LINE}"; fi
 
   {
-    printf '%s\n' "${stdout_line}" | sed 's!^!stdout<T>!'
-    printf '%s\n' "${stderr_line}" | sed 's!^!stderr<T>!'
-    printf '%s\n' "${rtcode_line}" | sed 's!^!rtcode<T>!'
+    if [ "${IS_STDOUT}" = 'yes' ]; then
+      printf '%s\n' "${stdout_line}" | sed 's!^!stdout<T>!'
+    fi
+    if [ "${IS_STDERR}" = 'yes' ]; then
+      printf '%s\n' "${stderr_line}" | sed 's!^!stderr<T>!'
+    fi
+    if [ "${IS_RTCODE}" = 'yes' ]; then
+      printf '%s\n' "${rtcode_line}" | sed 's!^!rtcode<T>!'
+    fi
   }                                                                 |
   sed 's!^!'"${hostname}"'<M>!'
 done
