@@ -13,9 +13,9 @@ Options : -u<user name> -so -se -rc
 Execute <command> on hosts on <inventory file>.
 
 -u:  Specify the user name to execute command (default: <$(whoami)> = who executes this).
--so: Enable the output of standard out (default: enabled).
--se: Enable the output of standard error (default: enabled).
--rc: Enable the output of return code as number (default: enabled).
+-so: Enable the output of standard out (default: disabled).
+-se: Enable the output of standard error (default: disabled).
+-rc: Enable the output of return code as number (default: disabled).
 
 Note.
   If all of -so, -se and -rc are NOT specified, all of them are enabled automaticaly.
