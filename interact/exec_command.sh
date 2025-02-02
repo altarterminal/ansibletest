@@ -98,7 +98,7 @@ if [ "${first_word}" = 'sudo' ]; then
 else
   is_become='yes'
   become_name="${USER_NAME}"
-  command_body=${COMMAND_STRING}
+  command_body="${COMMAND_STRING}"
 fi
 
 # make a playbook
@@ -153,9 +153,9 @@ do
   if [ -z "${stderr_line}" ]; then stderr_line="${NEW_LINE}"; fi
 
   {
-    printf '%s\n' "${stdout_line}" | grep ^ | sed 's!^!stdout<T>!'
-    printf '%s\n' "${stderr_line}" | grep ^ | sed 's!^!stderr<T>!'
-    printf '%s\n' "${rtcode_line}" | grep ^ | sed 's!^!rtcode<T>!'
+    printf '%s\n' "${stdout_line}" | sed 's!^!stdout<T>!'
+    printf '%s\n' "${stderr_line}" | sed 's!^!stderr<T>!'
+    printf '%s\n' "${rtcode_line}" | sed 's!^!rtcode<T>!'
   }                                                                 |
   sed 's!^!'"${hostname}"'<M>!'
 done

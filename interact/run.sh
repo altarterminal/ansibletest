@@ -118,7 +118,7 @@ do
       ;;
     c)
       "${TOP_DIR}/make_inventory.sh" "${LEDGER_FILE}" >"${INVENTORY_FILE}"
-      "${TOP_DIR}/exec_command_if.sh" "${INVENTORY_FILE}"
+      "${TOP_DIR}/mediate_exec.sh" "${INVENTORY_FILE}"
       ;;
     q)
       exit
