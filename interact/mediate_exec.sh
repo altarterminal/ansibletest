@@ -72,11 +72,11 @@ is_rtcode='yes'
 print_state() (
 cat<<EOF
 #####################################################################
-Standard Out: ${is_stdout}
-Standard Err: ${is_stderr}
-Return Code:  ${is_rtcode}
+Standard Out: $(echo ${is_stdout} | tr 'a-z' 'A-Z')
+Standard Err: $(echo ${is_stderr} | tr 'a-z' 'A-Z')
+Return Code:  $(echo ${is_rtcode} | tr 'a-z' 'A-Z')
 ---------------------------------------------------------------------
-h: Print this message.
+h: Show this message.
 o: Switch the output of standard out.
 e: Switch the output of standart error.
 c: Switch the output of return code.
@@ -102,7 +102,7 @@ exec_command() (
     ${stdout_opt} ${stderr_opt} ${rtcode_opt}                       \
    "${INVENTORY_FILE}" "${CMD}"                                     |
 
-   tee "${PREV_RESULT_FILE}"
+  tee "${PREV_RESULT_FILE}"
 )
 
 output_file() (
@@ -118,7 +118,7 @@ output_file() (
   fi
 
   if [ -e "${output_path}" ]; then
-    echo "The file of same name already exist <${output_file}>, specify another name."
+    echo "The file of same name already exists <${output_file}>, so specify another."
     return
   fi
 
