@@ -78,7 +78,7 @@ if [ -z "${opr_c}" ]; then
   exit 1
 fi
 
-if [ "${opt_so}" = 'no' ] && [ "${opt_se}" = 'no' ] && [ "${opt_rc}" = 'no' ]; then
+if [ "${opt_so}${opt_se}${opt_rc}" = 'nonono' ]; then
   readonly IS_STDOUT='yes'
   readonly IS_STDERR='yes'
   readonly IS_RTCODE='yes'
@@ -101,9 +101,6 @@ readonly TEMPLATE_NAME="${TMPDIR:-/tmp}/${0##*/}_${NOW_DATE}_XXXXXX"
 
 readonly PLAYBOOK_FILE="$(mktemp "${TEMPLATE_NAME}")"
 trap "[ -e ${PLAYBOOK_FILE} ] && rm ${PLAYBOOK_FILE}" EXIT
-
-NEW_LINE="$(printf '\n_')"
-readonly NEW_LINE="${NEWLINE%_}"
 
 #####################################################################
 # main routine
@@ -170,9 +167,6 @@ do
     echo "ERROR:${0##*/}: unexpected result <${result}> (skip)" 1>&2
     continue
   fi
-
-  if [ -z "${stdout_line}" ]; then stdout_line="${NEW_LINE}"; fi
-  if [ -z "${stderr_line}" ]; then stderr_line="${NEW_LINE}"; fi
 
   {
     if [ "${IS_STDOUT}" = 'yes' ]; then
