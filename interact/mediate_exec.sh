@@ -77,6 +77,7 @@ cat<<EOF
 Standard Out: $(echo ${is_stdout} | tr 'a-z' 'A-Z')
 Standard Err: $(echo ${is_stderr} | tr 'a-z' 'A-Z')
 Return Code:  $(echo ${is_rtcode} | tr 'a-z' 'A-Z')
+Execution Count: ${exec_count}
 ---------------------------------------------------------------------
 h: Show this message.
 o: Switch the output of standard out.
