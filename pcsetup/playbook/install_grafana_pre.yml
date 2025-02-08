@@ -1,0 +1,17 @@
+- name: install jenkins pre process
+  hosts: all
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: install dependency
+      apt:
+        name: 
+          - ca-certificates
+          - gnupg
+
+    - name: remove existing software
+      apt:
+        name:
+          - grafana
+        autoremove: yes
+        state: absent
