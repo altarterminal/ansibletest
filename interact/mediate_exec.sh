@@ -69,6 +69,8 @@ is_stdout='yes'
 is_stderr='yes'
 is_rtcode='yes'
 
+exec_count='0'
+
 print_state() (
 cat<<EOF
 #####################################################################
@@ -101,6 +103,8 @@ exec_command() (
   "${THIS_DIR}/exec_command.sh"                                     \
     ${stdout_opt} ${stderr_opt} ${rtcode_opt}                       \
    "${INVENTORY_FILE}" "${CMD}"                                     |
+
+  sed 's!^!'"${exec_count}"'<N>!'                                   |
 
   tee "${PREV_RESULT_FILE}"
 )
@@ -167,6 +171,7 @@ do
       output_file "${cmd}"
       ;;
     *)
+      exec_count=$((exec_count + 1))
       exec_command "${cmd}"
       ;;
   esac
