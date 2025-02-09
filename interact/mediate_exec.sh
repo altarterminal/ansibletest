@@ -50,18 +50,18 @@ readonly THIS_DIR="$(dirname "$0")"
 
 readonly NOW_DATE="$(date '+%Y%m%d%H%M%S')"
 readonly PREV_RESULT_NAME="${TMPDIR:-/tmp}/${0##*/}_${NOW_DATE}_prev_XXXXXX"
-readonly ALL_RESULT_NAME="${TMPDIR:-/tmp}/${0##*/}_${NOW_DATE}_all_XXXXXX"
+readonly GLOBAL_RESULT_NAME="${TMPDIR:-/tmp}/${0##*/}_${NOW_DATE}_global_XXXXXX"
 
 #####################################################################
 # prepare
 #####################################################################
 
 readonly PREV_RESULT_FILE="$(mktemp "${PREV_RESULT_NAME}")"
-readonly ALL_RESULT_FILE="$(mktemp "${ALL_RESULT_NAME}")"
+readonly GLOBAL_RESULT_FILE="$(mktemp "${GLOBAL_RESULT_NAME}")"
 
 trap "
   [ -e ${PREV_RESULT_FILE} ] && rm ${PREV_RESULT_FILE}
-  [ -e ${ALL_RESULT_FILE} ] && rm ${ALL_RESULT_FILE}
+  [ -e ${GLOBAL_RESULT_FILE} ] && rm ${GLOBAL_RESULT_FILE}
 " EXIT
 
 #####################################################################
@@ -86,8 +86,9 @@ h: Show this message.
 o: Switch the output of standard out.
 e: Switch the output of standart error.
 c: Switch the output of return code.
-w: Write the previous result to a specified file.
-W: Write the all result to a specified file.
+w: Write the log of previous result to a specified file.
+W: Write the log of all result to a specified file.
+r: Reset the log of all past result.
 q: Quit.
 #####################################################################
 EOF
@@ -112,10 +113,10 @@ exec_command() (
   sed 's!^!'"${exec_count}"'<N>!'                                   |
 
   tee "${PREV_RESULT_FILE}"                                         |
-  tee -a "${ALL_RESULT_FILE}"
+  tee -a "${GLOBAL_RESULT_FILE}"
 )
 
-output_file() (
+write_log() (
   readonly TYPE="$1"
   readonly OUT_PATH="$2"
 
@@ -132,12 +133,19 @@ output_file() (
     return
   fi
 
-  if [ "${TYPE}" = 'prev' ]; then
-    cp "${PREV_RESULT_FILE}" "${OUT_PATH}"
+  if   [ "${TYPE}" = 'prev' ]; then
+    cp "${PREV_RESULT_FILE}"   "${OUT_PATH}"
+  elif [ "${TYPE}" = 'global' ]; then
+    cp "${GLOBAL_RESULT_FILE}" "${OUT_PATH}"
   else
-    cp "${ALL_RESULT_FILE}" "${OUT_PATH}"
+    echo "ERROR:${0##*/}: invalid type specified <${TYPE}>" 1>&2
+    exit 1
   fi
 )
+
+reset_global_log() {
+  : >"${GLOBAL_RESULT_FILE}"
+}
 
 #####################################################################
 # main routine
@@ -179,10 +187,13 @@ do
       fi
       ;;
     w\ *)
-      output_file 'prev' "$(printf '%s\n' "${cmd}" | sed 's/^w *//')"
+      write_log 'prev'   "$(printf '%s\n' "${cmd}" | sed 's/^w *//')"
       ;;
     W\ *)
-      output_file 'all'  "$(printf '%s\n' "${cmd}" | sed 's/^W *//')"
+      write_log 'global' "$(printf '%s\n' "${cmd}" | sed 's/^W *//')"
+      ;;
+    r|r\ *)
+      reset_global_log
       ;;
     *)
       exec_count=$((exec_count + 1))
