@@ -49,16 +49,19 @@ readonly INVENTORY_FILE="${opr}"
 readonly THIS_DIR="$(dirname "$0")"
 
 readonly NOW_DATE="$(date '+%Y%m%d%H%M%S')"
-readonly PREV_RESULT_NAME="${TMPDIR:-/tmp}/${0##*/}_${NOW_DATE}_XXXXXX"
+readonly PREV_RESULT_NAME="${TMPDIR:-/tmp}/${0##*/}_${NOW_DATE}_prev_XXXXXX"
+readonly ALL_RESULT_NAME="${TMPDIR:-/tmp}/${0##*/}_${NOW_DATE}_all_XXXXXX"
 
 #####################################################################
 # prepare
 #####################################################################
 
 readonly PREV_RESULT_FILE="$(mktemp "${PREV_RESULT_NAME}")"
+readonly ALL_RESULT_FILE="$(mktemp "${ALL_RESULT_NAME}")"
 
 trap "
   [ -e ${PREV_RESULT_FILE} ] && rm ${PREV_RESULT_FILE}
+  [ -e ${ALL_RESULT_FILE} ] && rm ${ALL_RESULT_FILE}
 " EXIT
 
 #####################################################################
@@ -84,6 +87,7 @@ o: Switch the output of standard out.
 e: Switch the output of standart error.
 c: Switch the output of return code.
 w: Write the previous result to a specified file.
+W: Write the all result to a specified file.
 q: Quit.
 #####################################################################
 EOF
@@ -107,28 +111,34 @@ exec_command() (
 
   sed 's!^!'"${exec_count}"'<N>!'                                   |
 
-  tee "${PREV_RESULT_FILE}"
+  tee "${PREV_RESULT_FILE}"                                         |
+  tee -a "${ALL_RESULT_FILE}"
 )
 
 output_file() (
-  readonly CMD="$1"
+  readonly TYPE="$1"
+  readonly OUT_PATH="$2"
 
-  output_path=$(echo "${CMD}" | sed 's!^w  *!!')
-  output_file=$(basename "${output_path}")
-  output_dir=$(dirname "${output_path}")
+  out_file=$(basename "${OUT_PATH}")
+  out_dir=$(dirname "${OUT_PATH}")
 
-  if ! mkdir -p "${output_dir}"; then
-    echo "Failed to make a directory <${output_dir}>, so cannot write the result."
+  if ! mkdir -p "${out_dir}"; then
+    echo "Failed to make a directory <${out_dir}>, so cannot write the result."
     return
   fi
 
-  if [ -e "${output_path}" ]; then
-    echo "The file of same name already exists <${output_file}>, so specify another."
+  if [ -e "${OUT_PATH}" ]; then
+    echo "The file of same name already exists <${out_file}>, so specify another."
     return
   fi
 
-  cp "${PREV_RESULT_FILE}" "${output_path}"
+  if [ "${TYPE}" = 'prev' ]; then
+    cp "${PREV_RESULT_FILE}" "${OUT_PATH}"
+  else
+    cp "${ALL_RESULT_FILE}" "${OUT_PATH}"
+  fi
 )
+
 #####################################################################
 # main routine
 #####################################################################
@@ -169,7 +179,10 @@ do
       fi
       ;;
     w\ *)
-      output_file "${cmd}"
+      output_file 'prev' "$(printf '%s\n' "${cmd}" | sed 's/^w *//')"
+      ;;
+    W\ *)
+      output_file 'all'  "$(printf '%s\n' "${cmd}" | sed 's/^W *//')"
       ;;
     *)
       exec_count=$((exec_count + 1))
