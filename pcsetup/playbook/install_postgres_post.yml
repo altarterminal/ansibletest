@@ -1,0 +1,26 @@
+- name: install postgres post process
+  hosts: all
+  gather_facts: no
+  become: yes
+  vars:
+    BIN_DIR: "/usr/lib/postgresql/14/bin"
+    DB_DIR:  "/etc/postgresql/14/data"
+    HOST_IP: "127.0.0.1/32"
+  tasks:
+    - name: init db
+      ansible.builtin.shell: |
+        {{ BIN_DIR }}/initdb "{{ DB_DIR }}"
+      become_user: postgres 
+
+    - name: enable listen
+      ansible.builtin.blockinfile:
+        path: "{{ DB_DIR }}/postgresql.conf"
+        block: |
+          listen_addresses = '*'
+          port = 5432
+
+    - name: enable connection
+      ansible.builtin.blockinfile:
+        path: "{{ DB_DIR }}/pg_hba.conf"
+        block: |
+          host all all {{ HOST_IP }} trust

@@ -1,0 +1,11 @@
+- name: install postgres main process
+  hosts: all
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: install
+      ansible.builtin.apt:
+        update_cache: yes
+        name: 
+          - postgresql
+          - postgresql-contrib

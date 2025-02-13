@@ -1,0 +1,21 @@
+- name: install postgres pre process
+  hosts: all
+  gather_facts: no
+  become: yes
+  vars:
+    USER_NAME: "postgres"
+    USER_ID: "3000"
+  tasks:
+    - name: check the account
+      ansible.builtin.shell: |
+        id "{{ USER_NAME }}"
+      register: result
+      failed_when: result.rc not in [0, 1]
+
+    - name: create the account
+      ansible.builtin.user:
+        name: "{{ USER_NAME }}"
+        uid: "{{ USER_ID }}"
+        password: "{{ USER_NAME | password_hash('sha512') }}"
+        shell: "/bin/bash"
+      when: result.rc == 1
