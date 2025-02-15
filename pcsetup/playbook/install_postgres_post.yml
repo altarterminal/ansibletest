@@ -2,15 +2,16 @@
   hosts: all
   gather_facts: no
   become: yes
+  become_user: postgres
   vars:
     BIN_DIR: "/usr/lib/postgresql/14/bin"
-    DB_DIR:  "/etc/postgresql/14/data"
-    HOST_IP: "127.0.0.1/32"
+    DB_DIR:  "/var/lib/postgresql/data"
+    LOCALHOST_IP: "127.0.0.1/32"
+    LOCALNET_IP:  "172.18.0.0/16"
   tasks:
     - name: init db
       ansible.builtin.shell: |
         {{ BIN_DIR }}/initdb "{{ DB_DIR }}"
-      become_user: postgres 
 
     - name: enable listen
       ansible.builtin.blockinfile:
@@ -23,4 +24,9 @@
       ansible.builtin.blockinfile:
         path: "{{ DB_DIR }}/pg_hba.conf"
         block: |
-          host all all {{ HOST_IP }} trust
+          host all all {{ LOCALHOST_IP }} trust
+          host all all {{ LOCALNET_IP }} trust
+
+    - name: start service
+      ansible.builtin.shell: |
+        {{ BIN_DIR }}/pg_ctl -D "{{ DB_DIR }}" -w -t 60 start
