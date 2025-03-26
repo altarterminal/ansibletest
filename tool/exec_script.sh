@@ -24,8 +24,8 @@ USAGE
 # parameter
 #####################################################################
 
-opr_s=''
 opr_i=''
+opr_s=''
 opt_u=$(whoami)
 opt_c='no'
 opt_d='no'
@@ -40,9 +40,9 @@ do
     -d)                  opt_d='yes'          ;;
     *)
       if  [ $i -eq $(($# - 1)) ] && [ -z "${opr_i}" ]; then
-        opr_i=${arg}
+        opr_i="${arg}"
       elif [ $i -eq $# ] && [ -z "${opr_s}" ]; then
-        opr_s=${arg}
+        opr_s="${arg}"
       else
         echo "ERROR:${0##*/}: invalid args" 1>&2
         exit 1
@@ -53,7 +53,7 @@ do
   i=$((i + 1))
 done
 
-readonly IS_DRYRUN=${opt_d}
+readonly IS_DRYRUN="${opt_d}"
 
 if [ "${IS_DRYRUN}" = 'no' ]; then
   if ! type ansible-playbook >/dev/null 2>&1; then
@@ -69,10 +69,10 @@ if [ "${IS_DRYRUN}" = 'no' ]; then
   readonly INVENTORY_FILE="${opr_i}"
 fi
 
-if   [ "_${opr_s}" = '_' ]; then
+if   [ "${opr_s}" = '' ]; then
   echo "ERROR:${0##*/}: script must be specified" 1>&2
   exit 1
-elif [ "_${opr_s}" = '_-' ]; then
+elif [ "${opr_s}" = '-' ]; then
   :
 else
   if [ ! -f "${opr_s}" ] || [ ! -r "${opr_s}" ]; then
@@ -97,6 +97,10 @@ readonly SH_FILE="${opr_s}"
 readonly USER_NAME="${opt_u}"
 readonly IS_CHECK="${opt_c}"
 
+#####################################################################
+# setting
+#####################################################################
+
 readonly DATE=$(date '+%Y%m%d_%H%M%S')
 readonly TEMP_PLAYBOOK_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_playbook_XXXXXX"
 readonly TEMP_SH_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_script_XXXXXX"
@@ -116,7 +120,6 @@ trap "
 cat ${SH_FILE} >"${SH_MIDDLE_FILE}"
 
 if [ "${IS_CHECK}" = 'yes' ]; then
-  A
   if ! type shellcheck >/dev/null 2>&1; then
     echo "ERROR:${0##*/}: shellcheck command not found" 1>&2
     exit 1
