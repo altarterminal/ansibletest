@@ -10,8 +10,8 @@ print_usage_and_exit () {
 Usage   : ${0##*/} <inventory> <script>
 Options : -u<user name> -so -se -rc
 
-Execute shell scirpt <script> on <inventory>.
-Input the script contents from stdin if the <script> is -.
+Execute shell script <script> on <inventory>.
+When input the script contents from stdin, specify '-' as <script>.
 
 -u: Specify the user name to execute the script on hosts (default: $(whoami)).
 -c: Check the grammer before execution with shellcheck.
@@ -118,6 +118,7 @@ readonly IS_CHECK="${opt_c}"
 readonly DATE=$(date '+%Y%m%d_%H%M%S')
 readonly TEMP_PLAYBOOK_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_playbook_XXXXXX"
 readonly TEMP_SH_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_script_XXXXXX"
+readonly TEMP_RESULT_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_result_XXXXXX"
 
 #####################################################################
 # prepare
@@ -125,10 +126,12 @@ readonly TEMP_SH_NAME="${TMPDIR:-/tmp}/${0##*/}_${DATE}_script_XXXXXX"
 
 readonly PLAYBOOK_FILE=$(mktemp "${TEMP_PLAYBOOK_NAME}")
 readonly SH_MIDDLE_FILE=$(mktemp "${TEMP_SH_NAME}")
+readonly RESULT_FILE=$(mktemp "${TEMP_RESULT_NAME}")
 
 trap "
   [ -e ${PLAYBOOK_FILE} ] && rm ${PLAYBOOK_FILE}
   [ -e ${SH_MIDDLE_FILE} ] && rm ${SH_MIDDLE_FILE}
+  [ -e ${RESULT_FILE} ] && rm ${RESULT_FILE}
 " EXIT
 
 cat ${SH_FILE} >"${SH_MIDDLE_FILE}"
@@ -140,13 +143,13 @@ if [ "${IS_CHECK}" = 'yes' ]; then
   fi
 
   if ! shellcheck -S error "${SH_MIDDLE_FILE}" >/dev/null 2>&1; then
-    echo "ERROR:${0##*/}: shellcheck detected grammer error" 1>&2
+    echo "ERROR:${0##*/}: shellcheck detected syntax errors" 1>&2
     exit 1
   fi
 fi
 
 #####################################################################
-# main routine
+# make and exec playbook
 #####################################################################
 
 cat <<'EOF'                                                         |
@@ -158,11 +161,11 @@ cat <<'EOF'                                                         |
     sh_script: "<<sh_script>>" 
     user_name: "<<user_name>>"
   tasks:
-  - name: check the user exists
+  - name: pre process
     ansible.builtin.shell: |
       id "{{ user_name }}"
 
-  - name: execute script
+  - name: main process
     ansible.builtin.shell: |
       {{ lookup('ansible.builtin.file', sh_script) }}
     become_user: "{{ user_name }}"
@@ -173,14 +176,29 @@ cat >"${PLAYBOOK_FILE}"
 
 ANSIBLE_SHELL_ALLOW_WORLD_READABLE_TEMP=1                           \
 ansible-playbook -v -i "${INVENTORY_FILE}" "${PLAYBOOK_FILE}"       |
+cat >"${RESULT_FILE}"
 
-sed -n '/^TASK \[execute/,/^$/p'                                    |
+#####################################################################
+# sed command component
+#####################################################################
+
+SUCC_BEFORE='^.*: \[\(.*\)\] => \(.*\)'
+SUCC_AFTER='{"hostname":"\1","result":"OK","state":\2}'
+
+FAIL_BEFORE='^fatal: \[\(.*\)\]: \([A-Z]*\)! => \(.*\)'
+FAIL_AFTER='{"hostname":"\1","result":"\2","state":\3}'
+
+#####################################################################
+# pre process
+#####################################################################
+
+cat "${RESULT_FILE}"                                                |
+
+sed -n '/^TASK \[pre process\]/,/^$/p'                              |
 sed '1d;$d'                                                         |
+sed 's/'"${SUCC_BEFORE}"'/'"${SUCC_AFTER}"'/'                       |
+sed 's/'"${FAIL_BEFORE}"'/'"${FAIL_AFTER}"'/'                       |
 
-sed 's/^.*: \[\(.*\)\] => \(.*\)/{"hostname":"\1","result":"OK","state":\2}/'                 |
-sed 's/^fatal: \[\(.*\)\]: \([A-Z]*\)! => \(.*\)/{"hostname":"\1","result":"\2","state":\3}/' |
-
-# sort by hostname
 jq -s .                                                             |
 jq '. | sort_by(.hostname)'                                         |
 jq -c '.[]'                                                         |
@@ -190,14 +208,37 @@ do
   hostname=$(printf '%s' "${line}" | jq -r '.hostname')
   result=$(printf '%s' "${line}"   | jq -r '.result')
 
-  if   [ "${result}" = 'OK' ] || [ "${result}" = 'FAILED' ] ; then
+  if   [ "${result}" = 'UNREACHABLE' ]; then
+    echo "WARN:${0##*/}: host cannot be reached <${hostname}>" 1>&2
+  elif [ "${result}" = 'FAILED' ]; then
+    echo "WARN:${0##*/}: user not found <${USER_NAME} on ${hostname}>" 1>&2
+  fi
+done
+
+#####################################################################
+# main process
+#####################################################################
+
+cat "${RESULT_FILE}"                                                |
+
+sed -n '/^TASK \[main process\]/,/^$/p'                             |
+sed '1d;$d'                                                         |
+sed 's/'"${SUCC_BEFORE}"'/'"${SUCC_AFTER}"'/'                       |
+sed 's/'"${FAIL_BEFORE}"'/'"${FAIL_AFTER}"'/'                       |
+
+jq -s .                                                             |
+jq '. | sort_by(.hostname)'                                         |
+jq -c '.[]'                                                         |
+
+while read -r line
+do
+  hostname=$(printf '%s' "${line}" | jq -r '.hostname')
+  result=$(printf '%s' "${line}"   | jq -r '.result')
+
+  if [ "${result}" = 'OK' ] || [ "${result}" = 'FAILED' ] ; then
     stdout_line="$(printf '%s\n' "${line}" | jq -r '.state.stdout')"
     stderr_line="$(printf '%s\n' "${line}" | jq -r '.state.stderr')"
     rtcode_line="$(printf '%s\n' "${line}" | jq -r '.state.rc')"
-  elif [ "${result}" = 'UNREACHABLE' ]; then
-    stdout_line=''
-    stderr_line="$(printf '%s\n' "${line}" | jq -r '.state.msg')"
-    rtcode_line='255'
   else
     echo "ERROR:${0##*/}: unexpected result <${result}> (skip)" 1>&2
     continue
