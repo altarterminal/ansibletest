@@ -1,4 +1,4 @@
-- name: install jenkins pre process
+- name: install grafana pre process
   hosts: all
   gather_facts: no
   become: yes
