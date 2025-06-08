@@ -11,21 +11,16 @@
     download_url: "https://apt.releases.hashicorp.com"
     list_path: "/etc/apt/sources.list.d/hashicorp.list"
   tasks:
-    - name: gather date and time
-      ansible.builtin.setup:
-        gather_subset:
-          - "date_time"
-      when: ansible_date_time is not defined
-
-    - name: set variable
-      ansible.builtin.set_fact:
-        tmp_path: "/tmp/tmp_gpg_{{ ansible_date_time.date }}"
+    - name: make temp file
+      ansible.builtin.tempfile:
+      register: temp_gpg
 
     - name: download gpg
       ansible.builtin.get_url:
         url: "{{ gpg_url }}"
-        dest: "{{ tmp_path }}"
-        use_proxy: "{{ 'true' if proxy_setting != '' else 'false' }}"
+        dest: "{{ temp_gpg.path }}"
+        force: true
+        use_proxy: "{{ proxy_setting != '' }}"
 
     - name: prepare gpg directory
       ansible.builtin.file:
@@ -42,16 +37,16 @@
 
     - name: register external repository
       ansible.builtin.shell: |
-        gpg --dearmor -o "{{ gpg_path }}" < "{{ tmp_path }}"
+        gpg --dearmor -o "{{ gpg_path }}" "{{ temp_gpg.path }}"
         gpg --no-default-keyring --keyring "{{ gpg_path }}" --fingerprint
-        printf 'deb [arch=%s signed-by=%s] %s %s main'     \
+        printf 'deb [arch=%s signed-by=%s] %s %s main\n'   \
           "$(dpkg --print-architecture)" "{{ gpg_path }}"  \
-          "{{ download_url }}" "$(lsb_release -cs)"        |
-        tee "{{ list_path }}" >/dev/null
+          "{{ download_url }}" "$(lsb_release -cs)"        \
+          >"{{ list_path }}"
 
     - name: delete tmp gpg
       ansible.builtin.file:
-        path: "{{ tmp_path }}"
+        path: "{{ temp_gpg.path }}"
         state: absent
 
     - name: install
