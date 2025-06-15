@@ -4,7 +4,8 @@
   become: yes
   tasks:
     - name: install dependency
-      apt:
+　　　　ansible.builtin.apt:
+        update_cache: yes
         name: 
           - ca-certificates
           - gnupg
@@ -12,7 +13,7 @@
           - openjdk-17-jre
 
     - name: remove existing software
-      apt:
+      ansible.builtin.apt:
         name:
           - jenkins
         autoremove: yes
