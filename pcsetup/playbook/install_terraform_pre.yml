@@ -4,14 +4,15 @@
   become: yes
   tasks:
     - name: install dependency
-      apt:
+　　　　ansible.builtin.apt:
+        update_cache: yes
         name: 
           - ca-certificates
           - gnupg
           - lsb-release
 
     - name: remove existing software
-      apt:
+      ansible.builtin.apt:
         name:
           - terraform 
         autoremove: yes
