@@ -2,7 +2,51 @@
   hosts: all
   gather_facts: no
   become: yes
+  environment:
+    http_proxy:  "{{ proxy_setting }}"
+    https_proxy: "{{ proxy_setting }}"
+  vars:
+    gpg_url: "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+    gpg_path: "/etc/apt/keyrings/pgdg.gpg"
+    download_url: "http://apt.postgresql.org/pub/repos/apt"
+    list_path: "/etc/apt/sources.list.d/pgdg.list"
   tasks:
+    - name: make temp file
+      ansible.builtin.tempfile:
+      register: temp_gpg
+
+    - name: download tmp gpg
+      ansible.builtin.get_url:
+        url: "{{ gpg_url }}"
+        dest: "{{ temp_gpg.path }}"
+        force: true
+        use_proxy: "{{ proxy_setting != '' }}"
+
+    - name: prepare gpg directory
+      ansible.builtin.file:
+        path: "{{ gpg_path | dirname }}"
+        owner: root
+        group: root
+        mode: "0755"
+        state: directory
+
+    - name: delete old gpg (cannot skip this)
+      ansible.builtin.file:
+        path: "{{ gpg_path }}"
+        state: absent
+
+    - name: register external repository
+      ansible.builtin.shell: |
+        gpg --dearmor -o "{{ gpg_path }}" "{{ temp_gpg.path }}"
+        printf 'deb [signed-by=%s] %s %s-pgdg main\n'                \
+          "{{ gpg_path }}" "{{ download_url }}" "$(lsb_release -cs)" \
+          >"{{ list_path }}"
+
+    - name: delete tmp gpg
+      ansible.builtin.file:
+        path: "{{ temp_gpg.path }}"
+        state: absent
+
     - name: install
       ansible.builtin.apt:
         update_cache: yes

@@ -3,19 +3,34 @@
   gather_facts: no
   become: yes
   vars:
-    USER_NAME: "postgres"
-    USER_ID: "3000"
+    POSTGRES_UID: "3000"
   tasks:
-    - name: check the account
+    - name: check  account
       ansible.builtin.shell: |
-        id "{{ USER_NAME }}"
+        id postgres
       register: result
       failed_when: result.rc not in [0, 1]
 
     - name: create the account
       ansible.builtin.user:
-        name: "{{ USER_NAME }}"
-        uid: "{{ USER_ID }}"
-        password: "{{ USER_NAME | password_hash('sha512') }}"
+        name: "postgres"
+        uid: "{{ POSTGRES_UID }}"
+        password: "postgres | password_hash('sha512')"
         shell: "/bin/bash"
       when: result.rc == 1
+
+    - name: install dependency
+      ansible.builtin.apt:
+        update_cache: yes
+        name:
+          - ca-certificates
+          - gnupg
+          - lsb-release
+
+    - name: remove existing software
+      ansible.builtin.apt:
+        name:
+          - postgresql
+          - postgresql-contrib
+        autoremove: yes
+        state: absent
