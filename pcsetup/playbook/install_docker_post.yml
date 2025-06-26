@@ -1,37 +1,39 @@
-- name: install docker post process
+- name: Install docker post process
   hosts: all
-  gather_facts: no
-  become: yes
+  gather_facts: false
+  become: true
   vars:
     conf_path: "/etc/systemd/system/docker.service.d/http-proxy.conf"
   tasks:
-     - name: set proxy under its environment
-       when: proxy_setting != ""
-       block:
-       - name: check
-         ansible.builtin.shell: type docker >/dev/null 2>&1
+    - name: Set proxy under its environment
+      when: proxy_setting != ""
+      block:
+        - name: Check docker installed
+          ansible.builtin.shell: |
+            type docker >/dev/null 2>&1
 
-       - name: prepare serice directory
-         ansible.builtin.file:
-           path: "{{ conf_path | dirname }}"
-           owner: root
-           group: root
-           mode: "0755"
-           state: directory
+        - name: Prepare serice directory
+          ansible.builtin.file:
+            path: "{{ conf_path | dirname }}"
+            state: directory
+            owner: root
+            group: root
+            mode: "0755"
 
-       - name: set proxy
-         ansible.builtin.blockinfile:
-           path: "{{ conf_path }}"
-           block: |
-             [Service]
-             Environment = "HTTP_PROXY=http://{{ proxy_setting }}"
-             Environment = "HTTPS_PROXY=http://{{ proxy_setting }}"
-           create: true
-           owner: root
-           group: root
+        - name: Set proxy
+          ansible.builtin.blockinfile:
+            path: "{{ conf_path }}"
+            block: |
+              [Service]
+              Environment = "HTTP_PROXY=http://{{ proxy_setting }}"
+              Environment = "HTTPS_PROXY=http://{{ proxy_setting }}"
+            create: true
+            owner: root
+            group: root
+            mode: "0644"
 
-       - name: restart the service
-         ansible.builtin.systemd_service:
-           name: docker.service
-           state: restarted
-           daemon_reload: yes
+        - name: Restart the service
+          ansible.builtin.systemd_service:
+            name: docker.service
+            state: restarted
+            daemon_reload: true

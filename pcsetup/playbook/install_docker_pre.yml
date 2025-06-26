@@ -1,20 +1,20 @@
-- name: install docker pre process
+- name: Install docker pre process
   hosts: all
-  gather_facts: no
-  become: yes
+  gather_facts: false
+  become: true
   tasks:
-    - name: install dependency
-　　　　ansible.builtin.apt:
-        update_cache: yes
-        name: 
+    - name: Install dependency
+      ansible.builtin.apt:
+        update_cache: true
+        name:
           - ca-certificates
           - gnupg
           - lsb-release
 
-    - name: remove existing software
+    - name: Remove existing software
       ansible.builtin.apt:
         name:
           - docker-ce-cli
           - docker-ce
-        autoremove: yes
+        autoremove: true
         state: absent
