@@ -1,36 +1,36 @@
-- name: install postgres pre process
+- name: Install postgres pre process
   hosts: all
-  gather_facts: no
-  become: yes
+  gather_facts: false
+  become: true
   vars:
-    POSTGRES_UID: "3000"
+    postgres_uid: "3000"
   tasks:
-    - name: check  account
+    - name: Check required account
       ansible.builtin.shell: |
         id postgres
       register: result
       failed_when: result.rc not in [0, 1]
 
-    - name: create the account
+    - name: Create the account
       ansible.builtin.user:
         name: "postgres"
-        uid: "{{ POSTGRES_UID }}"
+        uid: "{{ postgres_uid }}"
         password: "postgres | password_hash('sha512')"
         shell: "/bin/bash"
       when: result.rc == 1
 
-    - name: install dependency
+    - name: Install dependency
       ansible.builtin.apt:
-        update_cache: yes
+        update_cache: true
         name:
           - ca-certificates
           - gnupg
           - lsb-release
 
-    - name: remove existing software
+    - name: Remove existing software
       ansible.builtin.apt:
         name:
           - postgresql
           - postgresql-contrib
-        autoremove: yes
+        autoremove: true
         state: absent
