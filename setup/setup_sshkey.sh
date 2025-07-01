@@ -22,7 +22,6 @@ USAGE
 # parameter
 #####################################################################
 
-opr=''
 opt_o='./ansible_sshkey'
 opt_f='no'
 
@@ -31,15 +30,11 @@ for arg in ${1+"$@"}
 do
   case "${arg}" in
     -h|--help|--version) print_usage_and_exit ;;
-    -o*)                 opt_o=${arg#-o}      ;;
+    -o*)                 opt_o="${arg#-o}"    ;;
     -f)                  opt_f='yes'          ;;
     *)
-      if [ $i -eq $# ] && [ -z "${opr}" ]; then
-        opr=${arg}
-      else
-        echo "ERROR:${0##*/}: invalid args" 1>&2
-        exit 1
-      fi
+      echo "ERROR:${0##*/}: invalid args" 1>&2
+      exit 1
       ;;
   esac
 
@@ -48,11 +43,12 @@ done
 
 if [ -z "${opt_o}" ]; then
   echo "ERROR:${0##*/}: output path must be specified" 1>&2
+  B
   exit 1
 fi
 
-readonly KEY_FILE="${opt_o}"
-readonly IS_FORCE="${opt_f}"
+KEY_FILE="${opt_o}"
+IS_FORCE="${opt_f}"
 
 #####################################################################
 # prepare
