@@ -13,10 +13,10 @@ Options : -e<env path> -c<config path> -k<sshkey path> -o<out name>
 Prepare the whole ansible setting.
 Output the script name to stdout to enable it when you source.
 
--e: specify the venv path (default: ./ansible_env)
--c: specify the config file path (default: ./ansible.cfg)
--k: specify the ssh secret key path (default: ./ansible_sshkey)
--o: specify the output file name to enable ansible (default: ./ansible_enable.sh)
+-e: Specify the virtual env path (default: ./ansible_venv)
+-c: Specify the config file path (default: ./ansible.cfg)
+-k: Specify the ssh secret key path (default: ./ansible_sshkey)
+-o: Specify the output file name to enable ansible (default: ./ansible_enable.sh)
 USAGE
   exit 1
 }
@@ -25,8 +25,7 @@ USAGE
 # parameter
 #####################################################################
 
-opr=''
-opt_e='./ansible_env'
+opt_e='./ansible_venv'
 opt_c='./ansible.cfg'
 opt_k='./ansible_sshkey'
 opt_o='./ansible_enable.sh'
@@ -36,17 +35,13 @@ for arg in ${1+"$@"}
 do
   case "${arg}" in
     -h|--help|--version) print_usage_and_exit ;;
-    -e*)                 opt_e=${arg#-e}      ;;
-    -c*)                 opt_c=${arg#-c}      ;;
-    -k*)                 opt_k=${arg#-k}      ;;
-    -o*)                 opt_o=${arg#-o}      ;;
+    -e*)                 opt_e="${arg#-e}"    ;;
+    -c*)                 opt_c="${arg#-c}"    ;;
+    -k*)                 opt_k="${arg#-k}"    ;;
+    -o*)                 opt_o="${arg#-o}"    ;;
     *)
-      if [ $i -eq $# ] && [ -z "${opr}" ]; then
-        opr=${arg}
-      else
-        echo "ERROR:${0##*/}: invalid args" 1>&2
-        exit 1
-      fi
+      echo "ERROR:${0##*/}: invalid args" 1>&2
+      exit 1
       ;;
   esac
 
@@ -73,12 +68,16 @@ if [ -z "${opt_o}" ]; then
   exit 1
 fi
 
-readonly ENV_PATH="${opt_e}"
-readonly CONFIG_PATH="${opt_c}"
-readonly KEY_PATH="${opt_k}"
-readonly OUT_FILE="${opt_o}"
+ENV_PATH="${opt_e}"
+CONFIG_PATH="${opt_c}"
+KEY_PATH="${opt_k}"
+OUT_FILE="${opt_o}"
 
-readonly THIS_DIR="${0%/*}"
+#####################################################################
+# setting
+#####################################################################
+
+THIS_DIR="$(dirname "$0")"
 
 #####################################################################
 # main routine
@@ -100,14 +99,11 @@ if ! "${THIS_DIR}/setup_sshkey.sh" -o"${KEY_PATH}"; then
 fi
 
 #####################################################################
-# main routine
+# post
 #####################################################################
 
 {
-  if ! type ansible >/dev/null 2>&1; then
-    echo '. '"$(realpath "${ENV_PATH}/bin/activate")"
-  fi
-
+  echo '. '"$(realpath "${ENV_PATH}/bin/activate")"
   echo 'export ANSIBLE_CONFIG='"$(realpath "${CONFIG_PATH}")"
   echo 'export ANSIBLE_PRIVATE_KEY_FILE='"$(realpath "${KEY_PATH}")"
 } >"${OUT_FILE}"
