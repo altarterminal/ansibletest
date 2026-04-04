@@ -28,7 +28,7 @@ USAGE
 opt_e='./ansible_venv'
 opt_c='./ansible.cfg'
 opt_k='./ansible_sshkey'
-opt_o='./ansible_enable.sh'
+opt_o='./activate_ansible.sh'
 
 i=1
 for arg in ${1+"$@"}
