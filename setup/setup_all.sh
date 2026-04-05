@@ -16,7 +16,7 @@ Output the script name to stdout to enable it when you source.
 -e: Specify the virtual env path (default: ./ansible_venv)
 -c: Specify the config file path (default: ./ansible.cfg)
 -k: Specify the ssh secret key path (default: ./ansible_sshkey)
--o: Specify the output file name to enable ansible (default: ./ansible_enable.sh)
+-o: Specify the output file name to enable ansible (default: ./activate_ansible.sh)
 USAGE
   exit 1
 }
