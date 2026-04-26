@@ -17,6 +17,7 @@ Output the script name to stdout to enable it when you source.
 -c: Specify the config file path (default: ./ansible.cfg)
 -k: Specify the ssh secret key path (default: ./ansible_sshkey)
 -o: Specify the output file name to enable ansible (default: ./activate_ansible.sh)
+-f: Enable force re-setup (delete the existing).
 USAGE
   exit 1
 }
@@ -29,6 +30,7 @@ opt_e='./ansible_venv'
 opt_c='./ansible.cfg'
 opt_k='./ansible_sshkey'
 opt_o='./activate_ansible.sh'
+opt_f='no'
 
 i=1
 for arg in ${1+"$@"}
@@ -39,6 +41,7 @@ do
     -c*)                 opt_c="${arg#-c}"    ;;
     -k*)                 opt_k="${arg#-k}"    ;;
     -o*)                 opt_o="${arg#-o}"    ;;
+    -f*)                 opt_f='yes'          ;;
     *)
       echo "ERROR:${0##*/}: invalid args" 1>&2
       exit 1
@@ -72,6 +75,7 @@ ENV_PATH="${opt_e}"
 CONFIG_PATH="${opt_c}"
 KEY_PATH="${opt_k}"
 OUT_FILE="${opt_o}"
+IS_FORCE="${opt_f}"
 
 #####################################################################
 # setting
@@ -79,21 +83,27 @@ OUT_FILE="${opt_o}"
 
 THIS_DIR="$(dirname "$0")"
 
+if [ "${IS_FORCE}" = 'yes' ]; then
+  FORCE_OPTION='-f'
+else
+  FORCE_OPTION=''
+fi
+
 #####################################################################
 # main routine
 #####################################################################
 
-if ! "${THIS_DIR}/setup_command.sh" -o"${ENV_PATH}"; then
+if ! "${THIS_DIR}/setup_command.sh" -o"${ENV_PATH}" ${FORCE_OPTION}; then
   echo "ERROR:${0##*/}: command setup failed" 1>&2
   exit 1
 fi
 
-if ! "${THIS_DIR}/setup_config.sh" -o"${CONFIG_PATH}"; then
+if ! "${THIS_DIR}/setup_config.sh" -o"${CONFIG_PATH}" ${FORCE_OPTION}; then
   echo "ERROR:${0##*/}: config setup failed" 1>&2
   exit 1
 fi
 
-if ! "${THIS_DIR}/setup_sshkey.sh" -o"${KEY_PATH}"; then
+if ! "${THIS_DIR}/setup_sshkey.sh" -o"${KEY_PATH}" ${FORCE_OPTION}; then
   echo "ERROR:${0##*/}: sshkey setup failed" 1>&2
   exit 1
 fi
@@ -108,4 +118,4 @@ fi
   echo 'export ANSIBLE_PRIVATE_KEY_FILE='"$(realpath "${KEY_PATH}")"
 } >"${OUT_FILE}"
 
-echo "$(realpath "${OUT_FILE}")"
+realpath "${OUT_FILE}"
